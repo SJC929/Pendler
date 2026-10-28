@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import { ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const API_URL = "http://127.0.0.1:8000";
 
@@ -37,13 +38,17 @@ function App() {
       </div>
 
       <h3>Verlauf heute</h3>
-      <ul className="verlauf">
-        {wetter.hourly.map((stunde) => (
-          <li key={stunde.time}>
-            {stunde.time} · {stunde.temperature}° · Regen {stunde.rain_probability} %
-          </li>
-        ))}
-      </ul>
+            <ResponsiveContainer width="100%" height={250}>
+        <ComposedChart data={wetter.hourly}>
+          <XAxis dataKey="time" interval={3} />
+          <YAxis yAxisId="temp" unit="°" />
+          <YAxis yAxisId="regen" orientation="right" unit="%" domain={[0, 100]} />
+          <Tooltip />
+          <Legend />
+          <Bar yAxisId="regen" dataKey="rain_probability" name="Regen" fill="#85B7EB" />
+          <Line yAxisId="temp" dataKey="temperature" name="Temperatur" stroke="#D85A30" strokeWidth={3} dot={false} />
+        </ComposedChart>
+      </ResponsiveContainer>
     </main>
   );
 }

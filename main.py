@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from wetter import get_weather, get_week_weather, will_it_rain, STADT, LAT, LON
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Pendler API")
 
@@ -61,3 +62,10 @@ def weather_week():
         "city": STADT,
         "days": woche,
     }
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
