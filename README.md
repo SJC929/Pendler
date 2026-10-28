@@ -3,7 +3,9 @@
 **A daily dashboard for commuters in Switzerland.**
 Open it in the morning and instantly see what you need for your day: today's weather, the temperature curve and whether you need an umbrella.
 
-> 🚧 Work in progress – the backend MVP is done, the web interface is coming next.
+> 🚧 Work in progress – backend and web interface are done, online deployment is coming next.
+
+![Pendler screenshot](docs/screenshot.png)
 
 ## ✨ Features
 
@@ -18,7 +20,7 @@ Open it in the morning and instantly see what you need for your day: today's wea
 |---|---|
 | Backend | Python, FastAPI |
 | Weather data | [Open-Meteo API](https://open-meteo.com/) |
-| Frontend (planned) | React |
+| Frontend | React, Recharts |
 | Hosting (planned) | Vercel |
 
 ## 🔌 API Endpoints
@@ -53,7 +55,7 @@ Then open http://127.0.0.1:8000/docs in your browser.
 
 - [x] Fetch weather data for Basel
 - [x] FastAPI endpoints for today and the week
-- [ ] React web interface (today view + 7-day view)
+- [x] React web interface (today view + 7-day view)
 - [ ] Deploy to Vercel
 - [ ] Choose your own city
 - [ ] Train connections (SBB)
