@@ -3,7 +3,9 @@
 **A daily dashboard for commuters in Switzerland.**
 Open it in the morning and instantly see what you need for your day: today's weather, the temperature curve and whether you need an umbrella.
 
-> 🚧 Work in progress – backend and web interface are done, online deployment is coming next.
+**🌐 Live demo:** https://pendler.vercel.app/
+
+> 🚧 Work in progress – more features like city selection and train connections are coming.
 
 ![Pendler screenshot](docs/screenshot.png)
 
@@ -21,7 +23,7 @@ Open it in the morning and instantly see what you need for your day: today's wea
 | Backend | Python, FastAPI |
 | Weather data | [Open-Meteo API](https://open-meteo.com/) |
 | Frontend | React, Recharts |
-| Hosting (planned) | Vercel |
+| Hosting | Vercel |
 
 ## 🔌 API Endpoints
 
@@ -56,7 +58,7 @@ Then open http://127.0.0.1:8000/docs in your browser.
 - [x] Fetch weather data for Basel
 - [x] FastAPI endpoints for today and the week
 - [x] React web interface (today view + 7-day view)
-- [ ] Deploy to Vercel
+- [x] Deploy to Vercel
 - [ ] Choose your own city
 - [ ] Train connections (SBB)
 
