@@ -13,6 +13,7 @@ def get_weather(lat, lon):
         "longitude": lon,
         "current": "temperature_2m",
         "hourly": "temperature_2m,precipitation_probability",
+        "daily": "temperature_2m_max,temperature_2m_min",
         "timezone": "Europe/Zurich",
         "forecast_days": 1,
     }
@@ -47,5 +48,6 @@ def show_weather(stadt, daten):
 
 
 # Hauptprogramm: die Maschinen benutzen
-daten = get_weather(LAT, LON)
-show_weather(STADT, daten)
+if __name__ == "__main__":
+    daten = get_weather(LAT, LON)
+    show_weather(STADT, daten)
