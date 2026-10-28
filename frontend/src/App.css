@@ -39,3 +39,54 @@
   padding: 6px 0;
   border-bottom: 1px solid #e2e8f0;
 }
+
+.umschalter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.umschalter button {
+  padding: 8px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.umschalter button.aktiv {
+  background: #0f172a;
+  color: white;
+  border-color: #0f172a;
+}
+
+.woche {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.tag {
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 10px 4px;
+  text-align: center;
+}
+
+.symbol {
+  font-size: 28px;
+  margin: 4px 0;
+}
+
+.wert-klein {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.regen {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #2563eb;
+}
