@@ -1,5 +1,6 @@
 import requests
 
+
 STADT = "Basel"
 LAT = 47.56
 LON = 7.59
@@ -20,6 +21,18 @@ def get_weather(lat, lon):
     antwort = requests.get(url, params=params)
     return antwort.json()
 
+def get_week_weather(lat, lon):
+    """Holt die 7-Tage-Prognose für einen Ort."""
+    url = "https://api.open-meteo.com/v1/forecast"
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+        "timezone": "Europe/Zurich",
+        "forecast_days": 7,
+    }
+    antwort = requests.get(url, params=params)
+    return antwort.json()
 
 def will_it_rain(regen):
     """True, wenn die Regenwahrscheinlichkeit irgendwann ab 50 % ist."""
@@ -51,3 +64,6 @@ def show_weather(stadt, daten):
 if __name__ == "__main__":
     daten = get_weather(LAT, LON)
     show_weather(STADT, daten)
+
+
+    

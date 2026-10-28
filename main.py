@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from wetter import get_weather, will_it_rain, STADT, LAT, LON
+from wetter import get_weather, get_week_weather, will_it_rain, STADT, LAT, LON
 
 app = FastAPI(title="Pendler API")
 
@@ -33,4 +33,31 @@ def weather_today():
         "max": daten["daily"]["temperature_2m_max"][0],
         "will_rain": will_it_rain(regen),
         "hourly": verlauf,
+    }
+
+
+@app.get("/weather/week")
+def weather_week():
+    daten = get_week_weather(LAT, LON)
+
+    tage = daten["daily"]["time"]
+    codes = daten["daily"]["weather_code"]
+    maxs = daten["daily"]["temperature_2m_max"]
+    mins = daten["daily"]["temperature_2m_min"]
+    regen = daten["daily"]["precipitation_probability_max"]
+
+    # Für jeden Tag eine «Kachel» bauen
+    woche = []
+    for i in range(len(tage)):
+        woche.append({
+            "date": tage[i],
+            "weather_code": codes[i],
+            "max": maxs[i],
+            "min": mins[i],
+            "rain_probability": regen[i],
+        })
+
+    return {
+        "city": STADT,
+        "days": woche,
     }
