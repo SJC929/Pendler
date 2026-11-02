@@ -48,8 +48,18 @@ function ladePins() {
   }
 }
 
+// Zuletzt geöffneten Tab laden
+function ladeBereich() {
+  try {
+    return localStorage.getItem("pendler-bereich") || "wetter";
+  } catch {
+    return "wetter";
+  }
+}
+
 function App() {
   // 📝 Gedächtnis
+  const [bereich, setBereich] = useState(ladeBereich); // NEU: «wetter» oder «zuege»
   const [pins, setPins] = useState(ladePins);
   const [ort, setOrt] = useState(() => ladePins()[0]);
   const [suche, setSuche] = useState("");
@@ -67,6 +77,15 @@ function App() {
     window.addEventListener("resize", pruefen);
     return () => window.removeEventListener("resize", pruefen);
   }, []);
+
+  // 🔔 Gewählten Tab merken
+  useEffect(() => {
+    try {
+      localStorage.setItem("pendler-bereich", bereich);
+    } catch {
+      // Speichern nicht möglich → ignorieren
+    }
+  }, [bereich]);
 
   // 🔔 Pins im Browser speichern, sobald sie sich ändern
   useEffect(() => {
@@ -146,134 +165,149 @@ function App() {
     <main className="app">
       <h1>🚆 Pendler</h1>
 
-      {/* Suchfeld */}
-      <div className="suche">
-        <input
-          type="text"
-          placeholder="🔍 Ort suchen, z. B. Winterthur"
-          value={suche}
-          onChange={(e) => setSuche(e.target.value)}
-        />
-        {vorschlaege.length > 0 && (
-          <ul className="vorschlaege">
-            {vorschlaege.map((v) => (
-              <li key={`${v.name}-${v.lat}-${v.lon}`} onClick={() => waehleOrt(v)}>
-                📍 {v.name} <span className="kanton">{v.canton}</span>
-              </li>
+      {/* 🧭 NEU: Navigation */}
+      <nav className="nav">
+        <button className={bereich === "wetter" ? "aktiv" : ""} onClick={() => setBereich("wetter")}>
+          🌦️ Wetter
+        </button>
+        <button className={bereich === "zuege" ? "aktiv" : ""} onClick={() => setBereich("zuege")}>
+          🚆 Verbindungen
+        </button>
+      </nav>
+
+      {/* ===== Bereich: Wetter ===== */}
+      <div className="bereich" hidden={bereich !== "wetter"}>
+        {/* Suchfeld */}
+        <div className="suche">
+          <input
+            type="text"
+            placeholder="🔍 Ort suchen, z. B. Winterthur"
+            value={suche}
+            onChange={(e) => setSuche(e.target.value)}
+          />
+          {vorschlaege.length > 0 && (
+            <ul className="vorschlaege">
+              {vorschlaege.map((v) => (
+                <li key={`${v.name}-${v.lat}-${v.lon}`} onClick={() => waehleOrt(v)}>
+                  📍 {v.name} <span className="kanton">{v.canton}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Gepinnte Orte */}
+        <div className="pins">
+          {pins.map((pin) => (
+            <span
+              key={`${pin.name}-${pin.lat}-${pin.lon}`}
+              className={gleich(pin, ort) ? "pin aktiv" : "pin"}
+              onClick={() => setOrt(pin)}
+            >
+              📌 {pin.name}
+              <button
+                className="pin-x"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  entfernePin(pin);
+                }}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+
+        <h2>
+          {ort.name} <span className="kanton">{ort.canton}</span>
+        </h2>
+
+        {/* Feiertag */}
+        {feiertag && feiertag.name && (
+          <div className={feiertag.days_until <= 1 ? "feiertag bald" : "feiertag"}>
+            📅 {feiertagTitel(feiertag.days_until)} in {feiertag.canton}:{" "}
+            <strong>{datumSchoen(feiertag.date)}</strong> · {feiertag.name}
+          </div>
+        )}
+
+        {/* Umschalter */}
+        <div className="umschalter">
+          <button className={ansicht === "heute" ? "aktiv" : ""} onClick={() => setAnsicht("heute")}>
+            Heute
+          </button>
+          <button className={ansicht === "woche" ? "aktiv" : ""} onClick={() => setAnsicht("woche")}>
+            7 Tage
+          </button>
+        </div>
+
+        {/* ⏳ Laden */}
+        {(wetter === null || woche === null) && <p>Lade Wetterdaten …</p>}
+
+        {/* Ansicht: Heute */}
+        {wetter !== null && ansicht === "heute" && (
+          <>
+            <div className="karten">
+              <div className="karte">
+                <p className="label">Jetzt</p>
+                <p className="wert">{wetter.now}°</p>
+              </div>
+              <div className="karte">
+                <p className="label">Min / Max</p>
+                <p className="wert">{wetter.min}° / {wetter.max}°</p>
+              </div>
+              <div className="karte">
+                <p className="label">Schirm?</p>
+                <p className="wert">{wetter.will_rain ? "☔ Ja" : "🌤️ Nein"}</p>
+              </div>
+              <div className={`karte pollen-${pollen ? pollen.key : "none"}`}>
+                <p className="label">🌸 Pollen</p>
+                <p className="wert">{pollen ? pollen.level : "…"}</p>
+                <p className="label">
+                  {pollen && pollen.type ? pollen.type : "heute keine Belastung"}
+                </p>
+              </div>
+            </div>
+
+            <h3>Verlauf heute</h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <ComposedChart data={wetter.hourly} margin={{ top: 5, right: 0, left: -10, bottom: 0 }}>
+                <XAxis
+                  dataKey="time"
+                  ticks={istHandy ? ["00:00", "12:00", "15:00", "18:00"] : undefined}
+                  interval={istHandy ? 0 : 3}
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis yAxisId="temp" unit="°" width={40} tick={{ fontSize: 12 }} />
+                <YAxis yAxisId="regen" orientation="right" unit="%" domain={[0, 100]} width={40} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Legend />
+                <Bar yAxisId="regen" dataKey="rain_probability" name="Regen" fill="#85B7EB" />
+                <Line yAxisId="temp" dataKey="temperature" name="Temperatur" stroke="#D85A30" strokeWidth={3} dot={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </>
+        )}
+
+        {/* Ansicht: 7 Tage */}
+        {woche !== null && ansicht === "woche" && (
+          <div className="woche">
+            {woche.days.map((tag) => (
+              <div className="tag" key={tag.date}>
+                <p className="label">{wochentag(tag.date)}</p>
+                <p className="symbol">{wetterSymbol(tag.weather_code)}</p>
+                <p className="wert-klein">{tag.max}°</p>
+                <p className="label">{tag.min}°</p>
+                <p className="regen">💧 {tag.rain_probability} %</p>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </div>
 
-      {/* Gepinnte Orte */}
-      <div className="pins">
-        {pins.map((pin) => (
-          <span
-            key={`${pin.name}-${pin.lat}-${pin.lon}`}
-            className={gleich(pin, ort) ? "pin aktiv" : "pin"}
-            onClick={() => setOrt(pin)}
-          >
-            📌 {pin.name}
-            <button
-              className="pin-x"
-              onClick={(e) => {
-                e.stopPropagation();
-                entfernePin(pin);
-              }}
-            >
-              ✕
-            </button>
-          </span>
-        ))}
+      {/* ===== Bereich: Verbindungen ===== */}
+      <div className="bereich" hidden={bereich !== "zuege"}>
+        <Zuege />
       </div>
-
-      <h2>
-        {ort.name} <span className="kanton">{ort.canton}</span>
-      </h2>
-
-      {/* Feiertag */}
-      {feiertag && feiertag.name && (
-        <div className={feiertag.days_until <= 1 ? "feiertag bald" : "feiertag"}>
-          📅 {feiertagTitel(feiertag.days_until)} in {feiertag.canton}:{" "}
-          <strong>{datumSchoen(feiertag.date)}</strong> · {feiertag.name}
-        </div>
-      )}
-
-      {/* Umschalter */}
-      <div className="umschalter">
-        <button className={ansicht === "heute" ? "aktiv" : ""} onClick={() => setAnsicht("heute")}>
-          Heute
-        </button>
-        <button className={ansicht === "woche" ? "aktiv" : ""} onClick={() => setAnsicht("woche")}>
-          7 Tage
-        </button>
-      </div>
-
-      {/* ⏳ Laden */}
-      {(wetter === null || woche === null) && <p>Lade Wetterdaten …</p>}
-
-      {/* Ansicht: Heute */}
-      {wetter !== null && ansicht === "heute" && (
-        <>
-          <div className="karten">
-            <div className="karte">
-              <p className="label">Jetzt</p>
-              <p className="wert">{wetter.now}°</p>
-            </div>
-            <div className="karte">
-              <p className="label">Min / Max</p>
-              <p className="wert">{wetter.min}° / {wetter.max}°</p>
-            </div>
-            <div className="karte">
-              <p className="label">Schirm?</p>
-              <p className="wert">{wetter.will_rain ? "☔ Ja" : "🌤️ Nein"}</p>
-            </div>
-            <div className={`karte pollen-${pollen ? pollen.key : "none"}`}>
-              <p className="label">🌸 Pollen</p>
-              <p className="wert">{pollen ? pollen.level : "…"}</p>
-              <p className="label">
-                {pollen && pollen.type ? pollen.type : "heute keine Belastung"}
-              </p>
-            </div>
-          </div>
-
-          <h3>Verlauf heute</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <ComposedChart data={wetter.hourly} margin={{ top: 5, right: 0, left: -10, bottom: 0 }}>
-              <XAxis
-                dataKey="time"
-                ticks={istHandy ? ["00:00","09:00", "12:00", "15:00", "18:00"] : undefined}
-                interval={istHandy ? 0 : 3}
-                tick={{ fontSize: 12 }}
-              />
-              <YAxis yAxisId="temp" unit="°" width={40} tick={{ fontSize: 12 }} />
-              <YAxis yAxisId="regen" orientation="right" unit="%" domain={[0, 100]} width={40} tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Legend />
-              <Bar yAxisId="regen" dataKey="rain_probability" name="Regen" fill="#85B7EB" />
-              <Line yAxisId="temp" dataKey="temperature" name="Temperatur" stroke="#D85A30" strokeWidth={3} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </>
-      )}
-
-      {/* Ansicht: 7 Tage */}
-      {woche !== null && ansicht === "woche" && (
-        <div className="woche">
-          {woche.days.map((tag) => (
-            <div className="tag" key={tag.date}>
-              <p className="label">{wochentag(tag.date)}</p>
-              <p className="symbol">{wetterSymbol(tag.weather_code)}</p>
-              <p className="wert-klein">{tag.max}°</p>
-              <p className="label">{tag.min}°</p>
-              <p className="regen">💧 {tag.rain_probability} %</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 🚆 Zugverbindungen (eigener Baustein) */}
-      <Zuege />
     </main>
   );
 }
