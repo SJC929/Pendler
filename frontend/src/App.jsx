@@ -4,7 +4,7 @@ import { ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveCont
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
-// NEU: Wettercode → Symbol
+// Wettercode → Symbol
 function wetterSymbol(code) {
   if (code === 0) return "☀️";
   if (code <= 3) return "⛅";
@@ -16,37 +16,48 @@ function wetterSymbol(code) {
   return "⛈️";
 }
 
-// NEU: "2026-10-28" → "Mi."
+// "2026-10-28" → "Mi."
 function wochentag(datum) {
   return new Date(datum).toLocaleDateString("de-CH", { weekday: "short" });
 }
 
 function App() {
+  // 📝 Gedächtnis
   const [wetter, setWetter] = useState(null);
-  const [woche, setWoche] = useState(null);         // NEU
-  const [ansicht, setAnsicht] = useState("heute");  // NEU
+  const [woche, setWoche] = useState(null);
+  const [ansicht, setAnsicht] = useState("heute");
+  const [istHandy, setIstHandy] = useState(window.innerWidth < 500);
 
+  // 🔔 Bildschirmbreite beobachten
+  useEffect(() => {
+    const pruefen = () => setIstHandy(window.innerWidth < 500);
+    window.addEventListener("resize", pruefen);
+    return () => window.removeEventListener("resize", pruefen);
+  }, []);
+
+  // 🔔 Wetterdaten holen
   useEffect(() => {
     fetch(`${API_URL}/weather/today`)
       .then((antwort) => antwort.json())
       .then((daten) => setWetter(daten));
 
-    // NEU: auch die Woche holen
     fetch(`${API_URL}/weather/week`)
       .then((antwort) => antwort.json())
       .then((daten) => setWoche(daten));
   }, []);
 
+  // ⏳ Warten, bis die Daten da sind
   if (wetter === null || woche === null) {
     return <p className="app">Lade Wetterdaten …</p>;
   }
 
+  // 🖥️ Die Seite
   return (
     <main className="app">
       <h1>🚆 Pendler</h1>
       <h2>{wetter.city}</h2>
 
-      {/* NEU: Umschalter */}
+      {/* Umschalter */}
       <div className="umschalter">
         <button
           className={ansicht === "heute" ? "aktiv" : ""}
@@ -62,6 +73,7 @@ function App() {
         </button>
       </div>
 
+      {/* Ansicht: Heute */}
       {ansicht === "heute" && (
         <>
           <div className="karten">
@@ -81,10 +93,15 @@ function App() {
 
           <h3>Verlauf heute</h3>
           <ResponsiveContainer width="100%" height={250}>
-            <ComposedChart data={wetter.hourly}>
-              <XAxis dataKey="time" interval={3} />
-              <YAxis yAxisId="temp" unit="°" />
-              <YAxis yAxisId="regen" orientation="right" unit="%" domain={[0, 100]} />
+            <ComposedChart data={wetter.hourly} margin={{ top: 5, right: 0, left: -10, bottom: 0 }}>
+              <XAxis
+                dataKey="time"
+                ticks={istHandy ? ["00:00", "12:00", "15:00", "18:00"] : undefined}
+                interval={istHandy ? 0 : 3}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis yAxisId="temp" unit="°" width={40} tick={{ fontSize: 12 }} />
+              <YAxis yAxisId="regen" orientation="right" unit="%" domain={[0, 100]} width={40} tick={{ fontSize: 12 }} />
               <Tooltip />
               <Legend />
               <Bar yAxisId="regen" dataKey="rain_probability" name="Regen" fill="#85B7EB" />
@@ -94,7 +111,7 @@ function App() {
         </>
       )}
 
-      {/* NEU: 7-Tage-Kacheln */}
+      {/* Ansicht: 7 Tage */}
       {ansicht === "woche" && (
         <div className="woche">
           {woche.days.map((tag) => (

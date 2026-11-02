@@ -90,3 +90,23 @@
   font-size: 12px;
   color: #2563eb;
 }
+
+@media (max-width: 500px) {
+  .app {
+    padding: 16px;
+  }
+
+  .karte {
+    padding: 10px;
+  }
+
+  .wert {
+    font-size: 18px;
+  }
+
+  .woche {
+    grid-template-columns: repeat(7, 64px);
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+}
