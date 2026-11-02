@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+// Verkehrsmittel → Symbol und Name
+const FAHRZEUG = {
+  train: { symbol: "🚆", name: "" },
+  tram: { symbol: "🚋", name: "Tram" },
+  bus: { symbol: "🚌", name: "Bus" },
+  ship: { symbol: "⛴️", name: "Schiff" },
+};
+
 // Heutiges Datum als "2026-11-02"
 function heuteDatum() {
   const d = new Date();
@@ -25,7 +33,7 @@ function gleicheRoute(a, b) {
   return a.von === b.von && a.nach === b.nach && a.zeit === b.zeit;
 }
 
-// 🧱 Kleiner Baustein: Eingabefeld mit Bahnhof-Vorschlägen
+// 🧱 Kleiner Baustein: Eingabefeld mit Haltestellen-Vorschlägen
 function StationFeld({ platzhalter, wert, setWert }) {
   const [vorschlaege, setVorschlaege] = useState([]);
   const [offen, setOffen] = useState(false);
@@ -190,22 +198,30 @@ export default function Zuege() {
           <p className="hinweis">Abfahrten ab {aktiv.zeit} Uhr, für die nächsten 3 Stunden</p>
           {verbindungen.length === 0 && <p>Keine Verbindungen in diesem Zeitraum.</p>}
           <ul className="verbindungen">
-            {verbindungen.map((v, i) => (
-              <li key={i} className="verbindung">
-                <div className="zeiten">
-                  <strong>{v.departure}</strong> → {v.arrival}
-                </div>
-                <div className="details">
-                  <span className="gleis">Gleis {v.platform || "–"}</span>
-                  <span>{v.products}</span>
-                  <span>{v.duration}</span>
-                  <span>{v.transfers === 0 ? "direkt" : `${v.transfers}× umsteigen`}</span>
-                </div>
-                <div className={v.delay ? "status verspaetet" : "status"}>
-                  {v.delay ? `+${v.delay}'` : "pünktlich"}
-                </div>
-              </li>
-            ))}
+            {verbindungen.map((v, i) => {
+              const fahrzeug = FAHRZEUG[v.type] || FAHRZEUG.train;
+              return (
+                <li key={i} className="verbindung">
+                  <div className="zeiten">
+                    <strong>{v.departure}</strong> → {v.arrival}
+                  </div>
+                  <div className="details">
+                    {/* Gleis nur bei Zügen */}
+                    {v.type === "train" && v.platform && (
+                      <span className="gleis">Gleis {v.platform}</span>
+                    )}
+                    <span className="linie">
+                      {fahrzeug.symbol} {fahrzeug.name} {v.line}
+                    </span>
+                    <span>{v.duration}</span>
+                    <span>{v.transfers === 0 ? "direkt" : `${v.transfers}× umsteigen`}</span>
+                  </div>
+                  <div className={v.delay ? "status verspaetet" : "status"}>
+                    {v.delay ? `+${v.delay}'` : "pünktlich"}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </>
       )}

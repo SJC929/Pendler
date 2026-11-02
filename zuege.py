@@ -5,6 +5,23 @@ import requests
 BASIS_URL = "https://transport.opendata.ch/v1"
 ZEITZONE = ZoneInfo("Europe/Zurich")
 
+# Kategorie aus dem Fahrplan → Verkehrsmittel
+TRAM = {"T", "NFT", "TRAM"}
+BUS = {"B", "BUS", "NFB", "KB", "EXB", "BP"}
+SCHIFF = {"BAT", "BAV", "FAE"}
+
+
+def verkehrsmittel(kategorie):
+    """'T' → 'tram', 'B' → 'bus', 'IR' → 'train' usw."""
+    k = (kategorie or "").upper()
+    if k in TRAM:
+        return "tram"
+    if k in BUS:
+        return "bus"
+    if k in SCHIFF:
+        return "ship"
+    return "train"
+
 
 def search_stations(name):
     """Sucht Bahnhöfe/Haltestellen nach Namen."""
@@ -27,6 +44,15 @@ def dauer_schoen(dauer):
     if stunden == 0:
         return f"{int(minuten)} min"
     return f"{stunden}h {minuten}min"
+
+
+def erstes_fahrzeug(verbindung):
+    """Sucht das erste Fahrzeug der Verbindung (Fusswege überspringen)."""
+    for abschnitt in verbindung.get("sections", []):
+        fahrt = abschnitt.get("journey")
+        if fahrt:
+            return fahrt.get("category"), fahrt.get("number")
+    return None, None
 
 
 def get_connections(von, nach, datum, zeit, stunden=3):
@@ -54,6 +80,15 @@ def get_connections(von, nach, datum, zeit, stunden=3):
         if ts is None or ts < start_ts or ts > ende_ts:
             continue
 
+        kategorie, nummer = erstes_fahrzeug(verbindung)
+        art = verkehrsmittel(kategorie)
+
+        # Linie: bei Zügen "IR 26", bei Bus/Tram nur die Nummer "48"
+        if art == "train":
+            linie = ", ".join(verbindung.get("products", []))
+        else:
+            linie = nummer or ", ".join(verbindung.get("products", []))
+
         prognose = abfahrt.get("prognosis") or {}
         verbindungen.append({
             "departure": abfahrt["departure"][11:16],
@@ -62,6 +97,7 @@ def get_connections(von, nach, datum, zeit, stunden=3):
             "delay": abfahrt.get("delay"),
             "duration": dauer_schoen(verbindung.get("duration") or "00d00:00:00"),
             "transfers": verbindung.get("transfers", 0),
-            "products": ", ".join(verbindung.get("products", [])),
+            "type": art,
+            "line": linie,
         })
     return verbindungen
