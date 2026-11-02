@@ -203,3 +203,16 @@
 .pollen-high {
   background: #fcebeb;
 }
+
+.feiertag {
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.feiertag.bald {
+  background: #fcebeb;
+  color: #a32d2d;
+}

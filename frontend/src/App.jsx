@@ -22,6 +22,15 @@ function wochentag(datum) {
   return new Date(datum).toLocaleDateString("de-CH", { weekday: "short" });
 }
 
+// "2026-12-25" → "Fr., 25. Dezember"
+function datumSchoen(datum) {
+  return new Date(datum).toLocaleDateString("de-CH", {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+  });
+}
+
 // Gleicher Ort? (Name + Kanton vergleichen)
 function gleich(a, b) {
   return a.name === b.name && a.canton === b.canton;
@@ -46,9 +55,10 @@ function App() {
   const [vorschlaege, setVorschlaege] = useState([]);
   const [wetter, setWetter] = useState(null);
   const [woche, setWoche] = useState(null);
+  const [pollen, setPollen] = useState(null);
+  const [feiertag, setFeiertag] = useState(null);
   const [ansicht, setAnsicht] = useState("heute");
   const [istHandy, setIstHandy] = useState(window.innerWidth < 500);
-    const [pollen, setPollen] = useState(null);
 
   // 🔔 Bildschirmbreite beobachten
   useEffect(() => {
@@ -66,11 +76,13 @@ function App() {
     }
   }, [pins]);
 
-  // 🔔 Wetter holen, sobald sich der Ort ändert
+  // 🔔 Alle Daten holen, sobald sich der Ort ändert
   useEffect(() => {
     const parameter = `lat=${ort.lat}&lon=${ort.lon}&city=${encodeURIComponent(ort.name)}`;
     setWetter(null);
     setWoche(null);
+    setPollen(null);
+    setFeiertag(null);
 
     fetch(`${API_URL}/weather/today?${parameter}`)
       .then((antwort) => antwort.json())
@@ -79,10 +91,14 @@ function App() {
     fetch(`${API_URL}/weather/week?${parameter}`)
       .then((antwort) => antwort.json())
       .then((daten) => setWoche(daten));
-          setPollen(null);
+
     fetch(`${API_URL}/pollen?lat=${ort.lat}&lon=${ort.lon}`)
       .then((antwort) => antwort.json())
       .then((daten) => setPollen(daten));
+
+    fetch(`${API_URL}/holidays/next?canton=${encodeURIComponent(ort.canton)}`)
+      .then((antwort) => antwort.json())
+      .then((daten) => setFeiertag(daten));
   }, [ort]);
 
   // 🔔 Orte suchen, während der Nutzer tippt (kurz warten, dann suchen)
@@ -115,6 +131,13 @@ function App() {
     if (rest.length === 0) return; // mindestens ein Ort bleibt
     setPins(rest);
     if (gleich(pin, ort)) setOrt(rest[0]);
+  }
+
+  // Text für den Feiertag
+  function feiertagTitel(tage) {
+    if (tage === 0) return "Heute Feiertag";
+    if (tage === 1) return "Morgen Feiertag";
+    return "Nächster Feiertag";
   }
 
   // 🖥️ Die Seite
@@ -167,6 +190,14 @@ function App() {
         {ort.name} <span className="kanton">{ort.canton}</span>
       </h2>
 
+      {/* Feiertag */}
+      {feiertag && feiertag.name && (
+        <div className={feiertag.days_until <= 1 ? "feiertag bald" : "feiertag"}>
+          📅 {feiertagTitel(feiertag.days_until)} in {feiertag.canton}:{" "}
+          <strong>{datumSchoen(feiertag.date)}</strong> · {feiertag.name}
+        </div>
+      )}
+
       {/* Umschalter */}
       <div className="umschalter">
         <button className={ansicht === "heute" ? "aktiv" : ""} onClick={() => setAnsicht("heute")}>
@@ -196,11 +227,11 @@ function App() {
               <p className="label">Schirm?</p>
               <p className="wert">{wetter.will_rain ? "☔ Ja" : "🌤️ Nein"}</p>
             </div>
-                        <div className={`karte pollen-${pollen ? pollen.key : "none"}`}>
+            <div className={`karte pollen-${pollen ? pollen.key : "none"}`}>
               <p className="label">🌸 Pollen</p>
               <p className="wert">{pollen ? pollen.level : "…"}</p>
               <p className="label">
-                {pollen && pollen.type ? pollen.type : "keine Saison"}
+                {pollen && pollen.type ? pollen.type : "heute keine Belastung"}
               </p>
             </div>
           </div>
