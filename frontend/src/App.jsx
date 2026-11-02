@@ -242,7 +242,7 @@ function App() {
             <ComposedChart data={wetter.hourly} margin={{ top: 5, right: 0, left: -10, bottom: 0 }}>
               <XAxis
                 dataKey="time"
-                ticks={istHandy ? ["00:00", "12:00", "15:00", "18:00"] : undefined}
+                ticks={istHandy ? ["00:00","09:00", "12:00", "15:00", "18:00"] : undefined}
                 interval={istHandy ? 0 : 3}
                 tick={{ fontSize: 12 }}
               />
