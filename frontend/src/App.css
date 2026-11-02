@@ -216,3 +216,103 @@
   background: #fcebeb;
   color: #a32d2d;
 }
+
+.zuege {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.route-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.route-form .suche {
+  margin-bottom: 0;
+}
+
+.zeit {
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+.pin-button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #0f172a;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.hinweis {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.verbindungen {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.verbindung {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.zeiten {
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.gleis {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.status {
+  font-size: 13px;
+  color: #3b6d11;
+  white-space: nowrap;
+}
+
+.status.verspaetet {
+  color: #a32d2d;
+  font-weight: 600;
+}
+
+@media (max-width: 500px) {
+  .route-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .verbindung {
+    grid-template-columns: 1fr auto;
+  }
+
+  .details {
+    grid-column: 1 / -1;
+  }
+}
