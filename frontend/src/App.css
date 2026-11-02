@@ -316,3 +316,31 @@
     grid-column: 1 / -1;
   }
 }
+.zeit-gruppe {
+  display: flex;
+  gap: 6px;
+}
+
+.jetzt-button {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.jetzt-button:hover {
+  background: #f1f5f9;
+}
+
+@media (max-width: 500px) {
+  .zeit-gruppe {
+    grid-column: 1 / -1;
+  }
+
+  .zeit-gruppe .zeit {
+    flex: 1;
+  }
+}

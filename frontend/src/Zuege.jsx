@@ -18,6 +18,14 @@ function heuteDatum() {
   return `${d.getFullYear()}-${monat}-${tag}`;
 }
 
+// Aktuelle Uhrzeit als "09:51"
+function aktuelleZeit() {
+  const d = new Date();
+  const stunden = String(d.getHours()).padStart(2, "0");
+  const minuten = String(d.getMinutes()).padStart(2, "0");
+  return `${stunden}:${minuten}`;
+}
+
 // Gepinnte Routen aus dem Browser laden
 function ladeRouten() {
   try {
@@ -89,8 +97,12 @@ export default function Zuege() {
   const [von, setVon] = useState("");
   const [nach, setNach] = useState("");
   const [zeit, setZeit] = useState("07:00");
+  const [jetztZeit, setJetztZeit] = useState(null); // NEU: «ab jetzt» statt gepinnter Zeit
   const [verbindungen, setVerbindungen] = useState(null);
   const [fehler, setFehler] = useState(false);
+
+  // Welche Startzeit gilt gerade? «Jetzt» hat Vorrang vor der Pin-Zeit
+  const startZeit = jetztZeit || (aktiv ? aktiv.zeit : null);
 
   // 🔔 Routen im Browser speichern
   useEffect(() => {
@@ -101,7 +113,7 @@ export default function Zuege() {
     }
   }, [routen]);
 
-  // 🔔 Verbindungen holen, sobald eine Route gewählt ist
+  // 🔔 Verbindungen holen, sobald Route oder Startzeit wechselt
   useEffect(() => {
     if (aktiv === null) return;
     setVerbindungen(null);
@@ -111,7 +123,7 @@ export default function Zuege() {
       von: aktiv.von,
       nach: aktiv.nach,
       date: heuteDatum(),
-      time: aktiv.zeit,
+      time: startZeit,
     });
 
     fetch(`${API_URL}/connections?${parameter}`)
@@ -121,7 +133,20 @@ export default function Zuege() {
       })
       .then((daten) => setVerbindungen(daten))
       .catch(() => setFehler(true));
-  }, [aktiv]);
+  }, [aktiv, startZeit]);
+
+  // NEU: Knopf «Jetzt»
+  function abJetzt() {
+    const jetzt = aktuelleZeit();
+    setZeit(jetzt);
+    setJetztZeit(jetzt);
+  }
+
+  // Route auswählen (zurück zur gepinnten Zeit)
+  function waehleRoute(route) {
+    setAktiv(route);
+    setJetztZeit(null);
+  }
 
   // Route pinnen
   function routePinnen() {
@@ -130,7 +155,7 @@ export default function Zuege() {
     if (!routen.some((r) => gleicheRoute(r, neueRoute))) {
       setRouten([...routen, neueRoute]);
     }
-    setAktiv(neueRoute);
+    waehleRoute(neueRoute);
     setVon("");
     setNach("");
   }
@@ -140,7 +165,7 @@ export default function Zuege() {
     const rest = routen.filter((r) => !gleicheRoute(r, route));
     setRouten(rest);
     if (aktiv !== null && gleicheRoute(aktiv, route)) {
-      setAktiv(rest[0] || null);
+      waehleRoute(rest[0] || null);
     }
   }
 
@@ -152,12 +177,17 @@ export default function Zuege() {
       <div className="route-form">
         <StationFeld platzhalter="Von, z. B. Basel SBB" wert={von} setWert={setVon} />
         <StationFeld platzhalter="Nach, z. B. Luzern" wert={nach} setWert={setNach} />
-        <input
-          type="time"
-          className="zeit"
-          value={zeit}
-          onChange={(e) => setZeit(e.target.value)}
-        />
+        <div className="zeit-gruppe">
+          <input
+            type="time"
+            className="zeit"
+            value={zeit}
+            onChange={(e) => setZeit(e.target.value)}
+          />
+          <button className="jetzt-button" onClick={abJetzt}>
+            🕐 Jetzt
+          </button>
+        </div>
         <button className="pin-button" onClick={routePinnen}>
           📌 Route pinnen
         </button>
@@ -169,7 +199,7 @@ export default function Zuege() {
           <span
             key={`${route.von}-${route.nach}-${route.zeit}`}
             className={aktiv !== null && gleicheRoute(route, aktiv) ? "pin aktiv" : "pin"}
-            onClick={() => setAktiv(route)}
+            onClick={() => waehleRoute(route)}
           >
             🚆 {route.von} → {route.nach} · {route.zeit}
             <button
@@ -195,7 +225,11 @@ export default function Zuege() {
       {/* Verbindungen */}
       {aktiv !== null && verbindungen !== null && (
         <>
-          <p className="hinweis">Abfahrten ab {aktiv.zeit} Uhr, für die nächsten 3 Stunden</p>
+          <p className="hinweis">
+            {jetztZeit
+              ? `Abfahrten ab jetzt (${jetztZeit} Uhr), für die nächsten 3 Stunden`
+              : `Abfahrten ab ${aktiv.zeit} Uhr, für die nächsten 3 Stunden`}
+          </p>
           {verbindungen.length === 0 && <p>Keine Verbindungen in diesem Zeitraum.</p>}
           <ul className="verbindungen">
             {verbindungen.map((v, i) => {
