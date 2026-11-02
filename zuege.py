@@ -4,11 +4,26 @@ import requests
 
 BASIS_URL = "https://transport.opendata.ch/v1"
 ZEITZONE = ZoneInfo("Europe/Zurich")
+ZEITLIMIT = 10  # Sekunden, so lange warten wir höchstens auf eine Antwort
 
 # Kategorie aus dem Fahrplan → Verkehrsmittel
 TRAM = {"T", "NFT", "TRAM"}
 BUS = {"B", "BUS", "NFB", "KB", "EXB", "BP"}
 SCHIFF = {"BAT", "BAV", "FAE"}
+
+
+class FahrplanNichtErreichbar(Exception):
+    """Wird ausgelöst, wenn transport.opendata.ch nicht antwortet."""
+
+
+def frage_fahrplan(pfad, params):
+    """Fragt transport.opendata.ch an, mit Zeitlimit und Fehlerbehandlung."""
+    try:
+        antwort = requests.get(f"{BASIS_URL}/{pfad}", params=params, timeout=ZEITLIMIT)
+        antwort.raise_for_status()
+        return antwort.json()
+    except requests.RequestException as fehler:
+        raise FahrplanNichtErreichbar(str(fehler))
 
 
 def verkehrsmittel(kategorie):
@@ -25,9 +40,7 @@ def verkehrsmittel(kategorie):
 
 def search_stations(name):
     """Sucht Bahnhöfe/Haltestellen nach Namen."""
-    params = {"query": name, "type": "station"}
-    antwort = requests.get(f"{BASIS_URL}/locations", params=params)
-    daten = antwort.json()
+    daten = frage_fahrplan("locations", {"query": name, "type": "station"})
 
     stationen = []
     for station in daten.get("stations", []):
@@ -68,8 +81,7 @@ def get_connections(von, nach, datum, zeit, stunden=3):
         "time": zeit,
         "limit": 16,
     }
-    antwort = requests.get(f"{BASIS_URL}/connections", params=params)
-    daten = antwort.json()
+    daten = frage_fahrplan("connections", params)
 
     verbindungen = []
     for verbindung in daten.get("connections", []):

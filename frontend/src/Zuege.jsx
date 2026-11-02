@@ -53,8 +53,8 @@ function StationFeld({ platzhalter, wert, setWert }) {
     }
     const timer = setTimeout(() => {
       fetch(`${API_URL}/stations/search?q=${encodeURIComponent(wert)}`)
-        .then((antwort) => antwort.json())
-        .then((daten) => setVorschlaege(daten));
+        .then((daten) => setVorschlaege(Array.isArray(daten) ? daten : []))
+        .catch(() => setVorschlaege([]));
     }, 300);
     return () => clearTimeout(timer);
   }, [wert, offen]);
@@ -220,7 +220,11 @@ export default function Zuege() {
         <p className="hinweis">Pinne eine Route, um deine Verbindungen zu sehen.</p>
       )}
       {aktiv !== null && verbindungen === null && !fehler && <p>Lade Verbindungen …</p>}
-      {fehler && <p className="hinweis">Verbindungen konnten nicht geladen werden.</p>}
+      {fehler && (
+        <p className="hinweis">
+          Der Fahrplan ist gerade nicht erreichbar. Versuch es in ein paar Minuten nochmals.
+        </p>
+      )}
 
       {/* Verbindungen */}
       {aktiv !== null && verbindungen !== null && (

@@ -1,8 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from wetter import get_weather, get_week_weather, search_locations, get_pollen, pollen_level, will_it_rain, STADT, LAT, LON
 from feiertage import next_holiday
-from zuege import search_stations, get_connections
+from zuege import search_stations, get_connections, FahrplanNichtErreichbar
 
 app = FastAPI(title="Pendler API")
 
@@ -95,9 +95,15 @@ def holidays_next(canton: str = "Basel-Stadt"):
 
 @app.get("/stations/search")
 def stations_search(q: str):
-    return search_stations(q)
+    try:
+        return search_stations(q)
+    except FahrplanNichtErreichbar:
+        raise HTTPException(status_code=503, detail="Fahrplan gerade nicht erreichbar")
 
 
 @app.get("/connections")
 def connections(von: str, nach: str, date: str, time: str):
-    return get_connections(von, nach, date, time)
+    try:
+        return get_connections(von, nach, date, time)
+    except FahrplanNichtErreichbar:
+        raise HTTPException(status_code=503, detail="Fahrplan gerade nicht erreichbar")
