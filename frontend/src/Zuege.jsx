@@ -97,7 +97,7 @@ export default function Zuege() {
   const [von, setVon] = useState("");
   const [nach, setNach] = useState("");
   const [zeit, setZeit] = useState("07:00");
-  const [jetztZeit, setJetztZeit] = useState(null); // NEU: «ab jetzt» statt gepinnter Zeit
+  const [jetztZeit, setJetztZeit] = useState(null);
   const [verbindungen, setVerbindungen] = useState(null);
   const [fehler, setFehler] = useState(false);
 
@@ -135,7 +135,7 @@ export default function Zuege() {
       .catch(() => setFehler(true));
   }, [aktiv, startZeit]);
 
-  // NEU: Knopf «Jetzt»
+  // Knopf «Jetzt»
   function abJetzt() {
     const jetzt = aktuelleZeit();
     setZeit(jetzt);

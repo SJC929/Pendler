@@ -1,3 +1,4 @@
+/* ===== Grundlayout ===== */
 .app {
   max-width: 600px;
   margin: 0 auto;
@@ -6,111 +7,36 @@
   color: #0f172a;
 }
 
-.karten {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.karte {
-  background: #f1f5f9;
-  border-radius: 12px;
-  padding: 12px;
-}
-
-.label {
-  margin: 0;
-  font-size: 13px;
-  color: #64748b;
-}
-
-.wert {
-  margin: 4px 0 0;
-  font-size: 22px;
-  font-weight: 600;
-}
-
-.verlauf {
-  list-style: none;
-  padding: 0;
-}
-
-.verlauf li {
-  padding: 6px 0;
+/* ===== Navigation ===== */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+  padding: 8px 0;
+  margin-bottom: 16px;
+  background: white;
   border-bottom: 1px solid #e2e8f0;
 }
 
-.umschalter {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.umschalter button {
-  padding: 8px 16px;
-  border: 1px solid #cbd5e1;
-  border-radius: 999px;
-  background: white;
+.nav button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  font-size: 15px;
+  color: #64748b;
   cursor: pointer;
-  font-size: 14px;
 }
 
-.umschalter button.aktiv {
+.nav button.aktiv {
   background: #0f172a;
   color: white;
-  border-color: #0f172a;
 }
 
-.woche {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-}
-
-.tag {
-  background: #f1f5f9;
-  border-radius: 12px;
-  padding: 10px 4px;
-  text-align: center;
-}
-
-.symbol {
-  font-size: 28px;
-  margin: 4px 0;
-}
-
-.wert-klein {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.regen {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: #2563eb;
-}
-
-@media (max-width: 500px) {
-  .app {
-    padding: 16px;
-  }
-
-  .karte {
-    padding: 10px;
-  }
-
-  .wert {
-    font-size: 18px;
-  }
-
-  .woche {
-    grid-template-columns: repeat(7, 64px);
-    overflow-x: auto;
-    padding-bottom: 4px;
-  }
-}
-
+/* ===== Ortssuche & Pins ===== */
 .suche {
   position: relative;
   margin-bottom: 12px;
@@ -188,22 +114,7 @@
   padding: 0;
 }
 
-.karten {
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-}
-
-.pollen-low {
-  background: #eaf3de;
-}
-
-.pollen-moderate {
-  background: #faeeda;
-}
-
-.pollen-high {
-  background: #fcebeb;
-}
-
+/* ===== Feiertag ===== */
 .feiertag {
   background: #f1f5f9;
   border-radius: 12px;
@@ -217,10 +128,109 @@
   color: #a32d2d;
 }
 
+/* ===== Umschalter Heute / 7 Tage ===== */
+.umschalter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.umschalter button {
+  padding: 8px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.umschalter button.aktiv {
+  background: #0f172a;
+  color: white;
+  border-color: #0f172a;
+}
+
+/* ===== Kacheln ===== */
+.karten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.karte {
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.label {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.wert {
+  margin: 4px 0 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* Pollen-Farben */
+.pollen-low {
+  background: #eaf3de;
+}
+
+.pollen-moderate {
+  background: #faeeda;
+}
+
+.pollen-high {
+  background: #fcebeb;
+}
+
+/* ===== 7-Tage-Ansicht ===== */
+.woche {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.tag {
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 10px 4px;
+  text-align: center;
+}
+
+.symbol {
+  font-size: 28px;
+  margin: 4px 0;
+}
+
+.wert-klein {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.regen {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #2563eb;
+}
+
+/* ===== Verbindungen ===== */
 .zuege {
   margin-top: 28px;
   padding-top: 16px;
   border-top: 1px solid #e2e8f0;
+}
+
+/* Im Tab braucht der Verbindungs-Teil keinen Trennstrich */
+.bereich .zuege {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .route-form {
@@ -234,11 +244,30 @@
   margin-bottom: 0;
 }
 
+.zeit-gruppe {
+  display: flex;
+  gap: 6px;
+}
+
 .zeit {
   padding: 10px;
   border: 1px solid #cbd5e1;
   border-radius: 12px;
   font-size: 16px;
+}
+
+.jetzt-button {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.jetzt-button:hover {
+  background: #f1f5f9;
 }
 
 .pin-button {
@@ -303,9 +332,37 @@
   font-weight: 600;
 }
 
+/* ===== 📱 Handy ===== */
 @media (max-width: 500px) {
+  .app {
+    padding: 16px;
+    padding-bottom: 90px;
+  }
+
+  .karte {
+    padding: 10px;
+  }
+
+  .wert {
+    font-size: 18px;
+  }
+
+  .woche {
+    grid-template-columns: repeat(7, 64px);
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
   .route-form {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .zeit-gruppe {
+    grid-column: 1 / -1;
+  }
+
+  .zeit-gruppe .zeit {
+    flex: 1;
   }
 
   .verbindung {
@@ -315,73 +372,8 @@
   .details {
     grid-column: 1 / -1;
   }
-}
-.zeit-gruppe {
-  display: flex;
-  gap: 6px;
-}
 
-.jetzt-button {
-  padding: 10px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  background: white;
-  font-size: 14px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.jetzt-button:hover {
-  background: #f1f5f9;
-}
-
-@media (max-width: 500px) {
-  .zeit-gruppe {
-    grid-column: 1 / -1;
-  }
-
-  .zeit-gruppe .zeit {
-    flex: 1;
-  }
-}
-/* 🧭 Navigation */
-.nav {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: flex;
-  gap: 8px;
-  padding: 8px 0;
-  margin-bottom: 16px;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.nav button {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 12px;
-  background: transparent;
-  font-size: 15px;
-  color: #64748b;
-  cursor: pointer;
-}
-
-.nav button.aktiv {
-  background: #0f172a;
-  color: white;
-}
-
-/* Im Tab braucht der Verbindungs-Teil keinen Trennstrich mehr */
-.bereich .zuege {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
-}
-
-/* 📱 Handy: Leiste unten, wie in einer App */
-@media (max-width: 500px) {
+  /* Navigation unten, wie in einer App */
   .nav {
     position: fixed;
     top: auto;
@@ -392,9 +384,5 @@
     padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
     border-bottom: none;
     border-top: 1px solid #e2e8f0;
-  }
-
-  .app {
-    padding-bottom: 90px;
   }
 }
