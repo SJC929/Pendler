@@ -88,3 +88,46 @@ def show_weather(stadt, daten):
 if __name__ == "__main__":
     daten = get_weather(LAT, LON)
     show_weather(STADT, daten)
+
+POLLEN_ARTEN = {
+    "alder_pollen": "Erle",
+    "birch_pollen": "Birke",
+    "grass_pollen": "Gräser",
+    "mugwort_pollen": "Beifuss",
+    "ragweed_pollen": "Ambrosia",
+}
+
+
+def get_pollen(lat, lon):
+    """Holt die Pollenbelastung für heute und gibt die stärkste Pollenart zurück."""
+    url = "https://air-quality-api.open-meteo.com/v1/air-quality"
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "hourly": ",".join(POLLEN_ARTEN.keys()),
+        "timezone": "Europe/Zurich",
+        "forecast_days": 1,
+    }
+    antwort = requests.get(url, params=params)
+    stunden = antwort.json().get("hourly", {})
+
+    hoechster_wert = 0
+    staerkste_art = None
+    for schluessel, name in POLLEN_ARTEN.items():
+        werte = [w for w in stunden.get(schluessel, []) if w is not None]
+        if werte and max(werte) > hoechster_wert:
+            hoechster_wert = max(werte)
+            staerkste_art = name
+
+    return hoechster_wert, staerkste_art
+
+
+def pollen_level(wert):
+    """Übersetzt den Messwert in eine einfache Stufe (vereinfacht)."""
+    if wert < 1:
+        return "none", "keine"
+    if wert < 20:
+        return "low", "schwach"
+    if wert < 100:
+        return "moderate", "mässig"
+    return "high", "stark"

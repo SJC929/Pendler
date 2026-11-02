@@ -187,3 +187,19 @@
   font-size: 12px;
   padding: 0;
 }
+
+.karten {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.pollen-low {
+  background: #eaf3de;
+}
+
+.pollen-moderate {
+  background: #faeeda;
+}
+
+.pollen-high {
+  background: #fcebeb;
+}

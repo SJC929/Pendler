@@ -48,6 +48,7 @@ function App() {
   const [woche, setWoche] = useState(null);
   const [ansicht, setAnsicht] = useState("heute");
   const [istHandy, setIstHandy] = useState(window.innerWidth < 500);
+    const [pollen, setPollen] = useState(null);
 
   // 🔔 Bildschirmbreite beobachten
   useEffect(() => {
@@ -78,6 +79,10 @@ function App() {
     fetch(`${API_URL}/weather/week?${parameter}`)
       .then((antwort) => antwort.json())
       .then((daten) => setWoche(daten));
+          setPollen(null);
+    fetch(`${API_URL}/pollen?lat=${ort.lat}&lon=${ort.lon}`)
+      .then((antwort) => antwort.json())
+      .then((daten) => setPollen(daten));
   }, [ort]);
 
   // 🔔 Orte suchen, während der Nutzer tippt (kurz warten, dann suchen)
@@ -190,6 +195,13 @@ function App() {
             <div className="karte">
               <p className="label">Schirm?</p>
               <p className="wert">{wetter.will_rain ? "☔ Ja" : "🌤️ Nein"}</p>
+            </div>
+                        <div className={`karte pollen-${pollen ? pollen.key : "none"}`}>
+              <p className="label">🌸 Pollen</p>
+              <p className="wert">{pollen ? pollen.level : "…"}</p>
+              <p className="label">
+                {pollen && pollen.type ? pollen.type : "keine Saison"}
+              </p>
             </div>
           </div>
 

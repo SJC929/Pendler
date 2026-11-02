@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from wetter import get_weather, get_week_weather, search_locations, will_it_rain, STADT, LAT, LON
+from wetter import get_weather, get_week_weather, search_locations, get_pollen, pollen_level, will_it_rain, STADT, LAT, LON
 
 app = FastAPI(title="Pendler API")
 
@@ -71,4 +71,15 @@ def weather_week(lat: float = LAT, lon: float = LON, city: str = STADT):
     return {
         "city": city,
         "days": woche,
+    }
+
+@app.get("/pollen")
+def pollen(lat: float = LAT, lon: float = LON):
+    wert, art = get_pollen(lat, lon)
+    key, stufe = pollen_level(wert)
+    return {
+        "key": key,
+        "level": stufe,
+        "type": art,
+        "value": round(wert),
     }
