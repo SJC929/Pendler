@@ -110,3 +110,80 @@
     padding-bottom: 4px;
   }
 }
+
+.suche {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.suche input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+.vorschlaege {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 4px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.vorschlaege li {
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.vorschlaege li:hover {
+  background: #f1f5f9;
+}
+
+.kanton {
+  font-size: 13px;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.pins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pin.aktiv {
+  background: #0f172a;
+  color: white;
+}
+
+.pin-x {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}

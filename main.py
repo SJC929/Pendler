@@ -1,8 +1,15 @@
 from fastapi import FastAPI
-from wetter import get_weather, get_week_weather, will_it_rain, STADT, LAT, LON
 from fastapi.middleware.cors import CORSMiddleware
+from wetter import get_weather, get_week_weather, search_locations, will_it_rain, STADT, LAT, LON
 
 app = FastAPI(title="Pendler API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
@@ -10,15 +17,19 @@ def home():
     return {"message": "Welcome to the Pendler API"}
 
 
+@app.get("/locations/search")
+def locations_search(q: str):
+    return search_locations(q)
+
+
 @app.get("/weather/today")
-def weather_today():
-    daten = get_weather(LAT, LON)
+def weather_today(lat: float = LAT, lon: float = LON, city: str = STADT):
+    daten = get_weather(lat, lon)
 
     stunden = daten["hourly"]["time"]
     temps = daten["hourly"]["temperature_2m"]
     regen = daten["hourly"]["precipitation_probability"]
 
-    # Stundenverlauf als Liste aufbauen
     verlauf = []
     for i in range(len(stunden)):
         verlauf.append({
@@ -28,7 +39,7 @@ def weather_today():
         })
 
     return {
-        "city": STADT,
+        "city": city,
         "now": daten["current"]["temperature_2m"],
         "min": daten["daily"]["temperature_2m_min"][0],
         "max": daten["daily"]["temperature_2m_max"][0],
@@ -38,8 +49,8 @@ def weather_today():
 
 
 @app.get("/weather/week")
-def weather_week():
-    daten = get_week_weather(LAT, LON)
+def weather_week(lat: float = LAT, lon: float = LON, city: str = STADT):
+    daten = get_week_weather(lat, lon)
 
     tage = daten["daily"]["time"]
     codes = daten["daily"]["weather_code"]
@@ -47,7 +58,6 @@ def weather_week():
     mins = daten["daily"]["temperature_2m_min"]
     regen = daten["daily"]["precipitation_probability_max"]
 
-    # Für jeden Tag eine «Kachel» bauen
     woche = []
     for i in range(len(tage)):
         woche.append({
@@ -59,13 +69,6 @@ def weather_week():
         })
 
     return {
-        "city": STADT,
+        "city": city,
         "days": woche,
     }
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)

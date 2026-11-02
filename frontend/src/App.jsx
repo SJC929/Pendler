@@ -3,6 +3,7 @@ import "./App.css";
 import { ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const STANDARD_ORT = { name: "Basel", canton: "Basel-Stadt", lat: 47.56, lon: 7.59 };
 
 // Wettercode → Symbol
 function wetterSymbol(code) {
@@ -21,8 +22,28 @@ function wochentag(datum) {
   return new Date(datum).toLocaleDateString("de-CH", { weekday: "short" });
 }
 
+// Gleicher Ort? (Name + Kanton vergleichen)
+function gleich(a, b) {
+  return a.name === b.name && a.canton === b.canton;
+}
+
+// Gepinnte Orte aus dem Browser laden
+function ladePins() {
+  try {
+    const gespeichert = localStorage.getItem("pendler-pins");
+    const pins = gespeichert ? JSON.parse(gespeichert) : [];
+    return pins.length > 0 ? pins : [STANDARD_ORT];
+  } catch {
+    return [STANDARD_ORT];
+  }
+}
+
 function App() {
   // 📝 Gedächtnis
+  const [pins, setPins] = useState(ladePins);
+  const [ort, setOrt] = useState(() => ladePins()[0]);
+  const [suche, setSuche] = useState("");
+  const [vorschlaege, setVorschlaege] = useState([]);
   const [wetter, setWetter] = useState(null);
   const [woche, setWoche] = useState(null);
   const [ansicht, setAnsicht] = useState("heute");
@@ -35,46 +56,127 @@ function App() {
     return () => window.removeEventListener("resize", pruefen);
   }, []);
 
-  // 🔔 Wetterdaten holen
+  // 🔔 Pins im Browser speichern, sobald sie sich ändern
   useEffect(() => {
-    fetch(`${API_URL}/weather/today`)
+    try {
+      localStorage.setItem("pendler-pins", JSON.stringify(pins));
+    } catch {
+      // Speichern nicht möglich (z. B. privater Modus) → ignorieren
+    }
+  }, [pins]);
+
+  // 🔔 Wetter holen, sobald sich der Ort ändert
+  useEffect(() => {
+    const parameter = `lat=${ort.lat}&lon=${ort.lon}&city=${encodeURIComponent(ort.name)}`;
+    setWetter(null);
+    setWoche(null);
+
+    fetch(`${API_URL}/weather/today?${parameter}`)
       .then((antwort) => antwort.json())
       .then((daten) => setWetter(daten));
 
-    fetch(`${API_URL}/weather/week`)
+    fetch(`${API_URL}/weather/week?${parameter}`)
       .then((antwort) => antwort.json())
       .then((daten) => setWoche(daten));
-  }, []);
+  }, [ort]);
 
-  // ⏳ Warten, bis die Daten da sind
-  if (wetter === null || woche === null) {
-    return <p className="app">Lade Wetterdaten …</p>;
+  // 🔔 Orte suchen, während der Nutzer tippt (kurz warten, dann suchen)
+  useEffect(() => {
+    if (suche.length < 2) {
+      setVorschlaege([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      fetch(`${API_URL}/locations/search?q=${encodeURIComponent(suche)}`)
+        .then((antwort) => antwort.json())
+        .then((daten) => setVorschlaege(daten));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [suche]);
+
+  // Ort auswählen → anzeigen und pinnen
+  function waehleOrt(neuerOrt) {
+    setOrt(neuerOrt);
+    setSuche("");
+    setVorschlaege([]);
+    if (!pins.some((p) => gleich(p, neuerOrt))) {
+      setPins([...pins, neuerOrt]);
+    }
+  }
+
+  // Pin entfernen
+  function entfernePin(pin) {
+    const rest = pins.filter((p) => !gleich(p, pin));
+    if (rest.length === 0) return; // mindestens ein Ort bleibt
+    setPins(rest);
+    if (gleich(pin, ort)) setOrt(rest[0]);
   }
 
   // 🖥️ Die Seite
   return (
     <main className="app">
       <h1>🚆 Pendler</h1>
-      <h2>{wetter.city}</h2>
+
+      {/* Suchfeld */}
+      <div className="suche">
+        <input
+          type="text"
+          placeholder="🔍 Ort suchen, z. B. Winterthur"
+          value={suche}
+          onChange={(e) => setSuche(e.target.value)}
+        />
+        {vorschlaege.length > 0 && (
+          <ul className="vorschlaege">
+            {vorschlaege.map((v) => (
+              <li key={`${v.name}-${v.lat}-${v.lon}`} onClick={() => waehleOrt(v)}>
+                📍 {v.name} <span className="kanton">{v.canton}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Gepinnte Orte */}
+      <div className="pins">
+        {pins.map((pin) => (
+          <span
+            key={`${pin.name}-${pin.lat}-${pin.lon}`}
+            className={gleich(pin, ort) ? "pin aktiv" : "pin"}
+            onClick={() => setOrt(pin)}
+          >
+            📌 {pin.name}
+            <button
+              className="pin-x"
+              onClick={(e) => {
+                e.stopPropagation();
+                entfernePin(pin);
+              }}
+            >
+              ✕
+            </button>
+          </span>
+        ))}
+      </div>
+
+      <h2>
+        {ort.name} <span className="kanton">{ort.canton}</span>
+      </h2>
 
       {/* Umschalter */}
       <div className="umschalter">
-        <button
-          className={ansicht === "heute" ? "aktiv" : ""}
-          onClick={() => setAnsicht("heute")}
-        >
+        <button className={ansicht === "heute" ? "aktiv" : ""} onClick={() => setAnsicht("heute")}>
           Heute
         </button>
-        <button
-          className={ansicht === "woche" ? "aktiv" : ""}
-          onClick={() => setAnsicht("woche")}
-        >
+        <button className={ansicht === "woche" ? "aktiv" : ""} onClick={() => setAnsicht("woche")}>
           7 Tage
         </button>
       </div>
 
+      {/* ⏳ Laden */}
+      {(wetter === null || woche === null) && <p>Lade Wetterdaten …</p>}
+
       {/* Ansicht: Heute */}
-      {ansicht === "heute" && (
+      {wetter !== null && ansicht === "heute" && (
         <>
           <div className="karten">
             <div className="karte">
@@ -112,7 +214,7 @@ function App() {
       )}
 
       {/* Ansicht: 7 Tage */}
-      {ansicht === "woche" && (
+      {woche !== null && ansicht === "woche" && (
         <div className="woche">
           {woche.days.map((tag) => (
             <div className="tag" key={tag.date}>

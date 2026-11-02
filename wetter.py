@@ -1,6 +1,5 @@
 import requests
 
-
 STADT = "Basel"
 LAT = 47.56
 LON = 7.59
@@ -21,6 +20,7 @@ def get_weather(lat, lon):
     antwort = requests.get(url, params=params)
     return antwort.json()
 
+
 def get_week_weather(lat, lon):
     """Holt die 7-Tage-Prognose für einen Ort."""
     url = "https://api.open-meteo.com/v1/forecast"
@@ -33,6 +33,30 @@ def get_week_weather(lat, lon):
     }
     antwort = requests.get(url, params=params)
     return antwort.json()
+
+
+def search_locations(name):
+    """Sucht Orte in der Schweiz (inkl. Kanton)."""
+    url = "https://geocoding-api.open-meteo.com/v1/search"
+    params = {
+        "name": name,
+        "count": 8,
+        "language": "de",
+        "countryCode": "CH",
+    }
+    antwort = requests.get(url, params=params)
+    daten = antwort.json()
+
+    orte = []
+    for ort in daten.get("results", []):
+        orte.append({
+            "name": ort["name"],
+            "canton": ort.get("admin1", ""),
+            "lat": ort["latitude"],
+            "lon": ort["longitude"],
+        })
+    return orte
+
 
 def will_it_rain(regen):
     """True, wenn die Regenwahrscheinlichkeit irgendwann ab 50 % ist."""
@@ -64,6 +88,3 @@ def show_weather(stadt, daten):
 if __name__ == "__main__":
     daten = get_weather(LAT, LON)
     show_weather(STADT, daten)
-
-
-    
