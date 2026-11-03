@@ -1,17 +1,20 @@
-"""Filtert eine Linie aus heruntergeladenen Ist-Daten-Dateien.
+"""Filtert eine Linie aus heruntergeladenen Ist-Daten (CSV oder Monats-ZIP).
 
-Vorher die Tagesdatei von Hand herunterladen:
-https://data.opentransportdata.swiss/dataset/ist-daten-v2
-und nach ml/data/raw/ legen (z. B. 2026-11-01_IstDaten.csv).
+Vorher herunterladen und nach ml/data/raw/ legen:
+- einzelne Tage:  https://data.opentransportdata.swiss/dataset/ist-daten-v2
+- ganze Monate:   https://archive.opentransportdata.swiss/  (ZIP)
 """
 import csv
+import io
 import sys
+import zipfile
 from pathlib import Path
 
 import pandas as pd
 
-LINIE = "48"   # die Linie, die uns interessiert
+LINIE = "48"        # die Linie, die uns interessiert
 BETREIBER = "BVB"   # Basler Verkehrs-Betriebe (48 gibt es auch in Genf, Lausanne, Bern)
+
 ORDNER = Path(__file__).parent / "data"
 ROH_ORDNER = ORDNER / "raw"
 ZIEL_ORDNER = ORDNER / "linie"
@@ -24,62 +27,82 @@ SPALTEN = [
 ]
 
 
-def finde_dateien(datum=None):
-    """Sucht Ist-Daten-Dateien in ml/data/raw/ (Gross-/Kleinschreibung egal)."""
-    alle = [p for p in ROH_ORDNER.glob("*.csv") if "istdaten" in p.name.lower()]
-    if datum:
-        alle = [p for p in alle if p.name.startswith(datum)]
-    return sorted(alle)
+def ziel_pfad(datum):
+    return ZIEL_ORDNER / f"{datum}_linie_{LINIE}.csv"
 
 
-def linie_herausfiltern(pfad):
-    """Liest die riesige Datei in Stücken und behält nur unsere Linie."""
-    with open(pfad, encoding="utf-8", errors="replace") as f:
-        trennzeichen = csv.Sniffer().sniff(f.readline()).delimiter
+def filtern(oeffnen, name):
+    """Liest eine Tagesdatei in Stücken und behält nur unsere Linie.
 
-    kopf = pd.read_csv(pfad, sep=trennzeichen, nrows=0).columns
+    `oeffnen` ist eine Funktion, die die Datei (neu) öffnet. So funktioniert
+    derselbe Code für normale Dateien und für Dateien in einem ZIP.
+    """
+    with oeffnen() as f:
+        erste_zeile = io.TextIOWrapper(f, encoding="utf-8", errors="replace").readline()
+    trennzeichen = csv.Sniffer().sniff(erste_zeile).delimiter
+
+    with oeffnen() as f:
+        kopf = pd.read_csv(f, sep=trennzeichen, nrows=0).columns
     vorhanden = [s for s in SPALTEN if s in kopf]
     fehlend = [s for s in SPALTEN if s not in kopf]
     if fehlend:
-        print("  ⚠️ Diese Spalten fehlen:", fehlend)
-        print("  Vorhanden sind:", list(kopf))
+        print(f"  ⚠️ {name}: Diese Spalten fehlen:", fehlend)
 
     treffer = []
-    for stueck in pd.read_csv(pfad, sep=trennzeichen, usecols=vorhanden,
-                              dtype=str, chunksize=500_000):
-        passt = (stueck["LINIEN_TEXT"] == LINIE) & (stueck["BETREIBER_ABK"] == BETREIBER)
-        treffer.append(stueck[passt])
-        print("·", end="", flush=True)
+    with oeffnen() as f:
+        for stueck in pd.read_csv(f, sep=trennzeichen, usecols=vorhanden,
+                                  dtype=str, chunksize=500_000):
+            passt = (stueck["LINIEN_TEXT"] == LINIE) & (stueck["BETREIBER_ABK"] == BETREIBER)
+            treffer.append(stueck[passt])
+            print("·", end="", flush=True)
     print()
     return pd.concat(treffer)
 
 
-def datei_verarbeiten(pfad):
-    datum = pfad.name[:10]   # "2026-11-01_IstDaten.csv" → "2026-11-01"
-    print(f"✂️  {pfad.name}: filtere Linie {LINIE} …")
-    linie = linie_herausfiltern(pfad)
-
+def speichern(datum, linie):
     ZIEL_ORDNER.mkdir(parents=True, exist_ok=True)
-    ziel = ZIEL_ORDNER / f"{datum}_linie_{LINIE}.csv"
-    linie.to_csv(ziel, index=False)
-    print(f"💾 {len(linie):,} Zeilen gespeichert in {ziel}")
-    return linie
+    linie.to_csv(ziel_pfad(datum), index=False)
+    print(f"  💾 {datum}: {len(linie):,} Zeilen")
+
+
+def csv_verarbeiten(pfad):
+    datum = pfad.name[:10]
+    if ziel_pfad(datum).exists():
+        print(f"⏭️  {datum} schon vorhanden, übersprungen")
+        return
+    print(f"✂️  {pfad.name}")
+    speichern(datum, filtern(lambda: open(pfad, "rb"), pfad.name))
+
+
+def zip_verarbeiten(pfad):
+    print(f"📦 {pfad.name}")
+    with zipfile.ZipFile(pfad) as archiv:
+        tagesdateien = sorted(n for n in archiv.namelist()
+                              if n.lower().endswith(".csv") and "istdaten" in n.lower())
+        print(f"   {len(tagesdateien)} Tagesdateien im ZIP")
+        for name in tagesdateien:
+            datum = Path(name).name[:10]
+            if ziel_pfad(datum).exists():
+                print(f"⏭️  {datum} schon vorhanden, übersprungen")
+                continue
+            print(f"✂️  {Path(name).name}")
+            speichern(datum, filtern(lambda n=name: archiv.open(n), name))
 
 
 if __name__ == "__main__":
-    datum = sys.argv[1] if len(sys.argv) > 1 else None
-    dateien = finde_dateien(datum)
+    dateien = sorted(p for p in ROH_ORDNER.iterdir()
+                     if p.suffix.lower() in (".csv", ".zip") and "istdaten" in p.name.lower()
+                     or p.suffix.lower() == ".zip")
 
     if not dateien:
-        print("❌ Keine Ist-Daten-Datei gefunden in", ROH_ORDNER)
-        print("   Bitte zuerst herunterladen und dort ablegen.")
+        print("❌ Keine Ist-Daten (CSV oder ZIP) gefunden in", ROH_ORDNER)
         sys.exit(1)
 
     for pfad in dateien:
-        linie = datei_verarbeiten(pfad)
+        if pfad.suffix.lower() == ".zip":
+            zip_verarbeiten(pfad)
+        else:
+            csv_verarbeiten(pfad)
 
-    # Kontrolle (letzte Datei): Welche Linie 48 haben wir erwischt?
-    print("\nBetreiber:\n", linie["BETREIBER_ABK"].value_counts())
-    print("\nVerkehrsmittel:\n", linie["PRODUKT_ID"].value_counts())
-    print("\nHäufigste Haltestellen:\n", linie["HALTESTELLEN_NAME"].value_counts().head(10))
-    print("\nTipp: Die grosse Rohdatei in ml/data/raw/ kannst du jetzt löschen.")
+    anzahl = len(list(ZIEL_ORDNER.glob(f"*_linie_{LINIE}.csv")))
+    print(f"\n✅ Fertig. {anzahl} Tage für Linie {LINIE} ({BETREIBER}) in {ZIEL_ORDNER}")
