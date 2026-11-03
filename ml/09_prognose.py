@@ -7,8 +7,9 @@ Erstellt die Verspätungsprognose für Bus 48 (BVB) für die nächsten 7 Tage.
 4. Speichert alles in prognosen/bus48.json (wird später von FastAPI gelesen)
 """
 import json
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
@@ -18,12 +19,18 @@ ML = Path(__file__).resolve().parent
 DATEN = ML / "data" / "bus48_modell.csv"
 AUSGABE = ML.parent / "prognosen" / "bus48.json"
 
+SCHWEIZ = ZoneInfo("Europe/Zurich")   # GitHub läuft in UTC → Schweizer Zeit fest vorgeben
 TAGE = 7
 LAT, LON = 47.56, 7.59
 SCHWELLE_MIN = 3
 
 ZAHLEN = ["stunde", "wochentag", "wochenende", "schulferien", "temp", "regen_mm"]
 KATEGORIEN = ["HALTESTELLEN_NAME", "richtung"]
+
+
+def heute():
+    """Heutiges Datum in der Schweiz."""
+    return datetime.now(SCHWEIZ).date()
 
 
 def merkmale(tabelle, spalten=None):
@@ -92,7 +99,7 @@ def zeilen_bauen(daten, wetter, ferien):
     # Welche Haltestellen fährt der Bus pro Richtung an, und zu welchen Stunden?
     kombis = daten[["richtung", "HALTESTELLEN_NAME", "stunde"]].drop_duplicates()
 
-    tage = pd.DataFrame({"tag": pd.date_range(date.today(), periods=TAGE)})
+    tage = pd.DataFrame({"tag": pd.date_range(heute(), periods=TAGE)})
     zeilen = tage.merge(kombis, how="cross")
 
     zeilen["wochentag"] = zeilen["tag"].dt.day_of_week        # 0 = Montag
@@ -115,7 +122,7 @@ def speichern(zeilen):
     inhalt = {
         "linie": "48",
         "betreiber": "BVB",
-        "erstellt": datetime.now().isoformat(timespec="minutes"),
+        "erstellt": datetime.now(SCHWEIZ).isoformat(timespec="minutes"),
         "schwelle_min": SCHWELLE_MIN,
         "prognosen": aus.to_dict("records"),
     }
@@ -128,8 +135,8 @@ def main():
     modell, spalten, daten = modell_trainieren()
     wetter = wetter_holen()
 
-    heute = date.today()
-    ferien = ferientage_holen(heute, heute + pd.Timedelta(days=TAGE))
+    start = heute()
+    ferien = ferientage_holen(start, start + pd.Timedelta(days=TAGE))
 
     zeilen = zeilen_bauen(daten, wetter, ferien)
     zeilen["risiko"] = modell.predict_proba(merkmale(zeilen, spalten))[:, 1].round(2)
