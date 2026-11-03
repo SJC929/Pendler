@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from wetter import get_weather, get_week_weather, search_locations, get_pollen, pollen_level, will_it_rain, STADT, LAT, LON
 from feiertage import next_holiday
 from zuege import search_stations, get_connections, FahrplanNichtErreichbar
+from prognose import delay_prognose, haltestellen, PrognoseFehlt, HaltestelleUnbekannt
 
 app = FastAPI(title="Pendler API")
 
@@ -107,3 +108,20 @@ def connections(von: str, nach: str, date: str, time: str):
         return get_connections(von, nach, date, time)
     except FahrplanNichtErreichbar:
         raise HTTPException(status_code=503, detail="Fahrplan gerade nicht erreichbar")
+
+@app.get("/predict/delay/stops")
+def predict_delay_stops():
+    try:
+        return haltestellen()
+    except PrognoseFehlt:
+        raise HTTPException(status_code=503, detail="Prognose ist gerade nicht verfügbar")
+
+
+@app.get("/predict/delay")
+def predict_delay(haltestelle: str, richtung: str, datum: str | None = None):
+    try:
+        return delay_prognose(haltestelle, richtung, datum)
+    except PrognoseFehlt:
+        raise HTTPException(status_code=503, detail="Prognose ist gerade nicht verfügbar")
+    except HaltestelleUnbekannt:
+        raise HTTPException(status_code=404, detail="Keine Prognose für diese Haltestelle/Richtung")
