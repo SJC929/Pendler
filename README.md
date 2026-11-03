@@ -118,3 +118,10 @@ Progress is tracked on the [project board](https://github.com/SJC929/Pendler/iss
 - Weather, pollen and location data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0)
 - Public holidays by [OpenHolidays API](https://www.openholidaysapi.org/) (CC BY 4.0)
 - Timetable data by [transport.opendata.ch](https://transport.opendata.ch/) (Swiss public transport open data)
+
+
+ ## 📊 Data Science: Velos in Basel
+ - 600'000 Zählungen + Wetter von MeteoSchweiz
+ - Erkenntnis: Werktags 70 % mehr Velos, Temperatur & Sonne wichtiger als Regen
+ - Modell: R² 0.83, Fehler halbiert gegenüber einfacher Regel
+ [Diagramm]  → Notebook ansehen
