@@ -386,3 +386,13 @@
     border-top: 1px solid #e2e8f0;
   }
 }
+/* Hinweis in der Vorschlagsliste (nicht anklickbar) */
+.vorschlaege li.vorschlag-hinweis {
+  color: #64748b;
+  font-size: 14px;
+  cursor: default;
+}
+
+.vorschlaege li.vorschlag-hinweis:hover {
+  background: transparent;
+}

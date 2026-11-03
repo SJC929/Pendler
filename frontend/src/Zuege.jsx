@@ -41,23 +41,53 @@ function gleicheRoute(a, b) {
   return a.von === b.von && a.nach === b.nach && a.zeit === b.zeit;
 }
 
+// Texte für den Zustand der Suche
+const SUCH_HINWEIS = {
+  laedt: "🔍 Suche …",
+  leer: "Keine Haltestelle gefunden",
+  fehler: "Suche gerade nicht verfügbar. Versuch es gleich nochmals.",
+};
+
 // 🧱 Kleiner Baustein: Eingabefeld mit Haltestellen-Vorschlägen
 function StationFeld({ platzhalter, wert, setWert }) {
   const [vorschlaege, setVorschlaege] = useState([]);
   const [offen, setOffen] = useState(false);
+  const [status, setStatus] = useState(""); // "", "laedt", "leer" oder "fehler"
 
   useEffect(() => {
     if (!offen || wert.length < 2) {
       setVorschlaege([]);
+      setStatus("");
       return;
     }
+
+    setStatus("laedt");
     const timer = setTimeout(() => {
       fetch(`${API_URL}/stations/search?q=${encodeURIComponent(wert)}`)
-        .then((daten) => setVorschlaege(Array.isArray(daten) ? daten : []))
-        .catch(() => setVorschlaege([]));
+        .then((antwort) => {
+          if (!antwort.ok) throw new Error("Fehler");
+          return antwort.json();
+        })
+        .then((daten) => {
+          const liste = Array.isArray(daten) ? daten : [];
+          setVorschlaege(liste);
+          setStatus(liste.length > 0 ? "" : "leer");
+        })
+        .catch(() => {
+          setVorschlaege([]);
+          setStatus("fehler");
+        });
     }, 300);
+
     return () => clearTimeout(timer);
   }, [wert, offen]);
+
+  function waehle(station) {
+    setWert(station.name);
+    setOffen(false);
+    setVorschlaege([]);
+    setStatus("");
+  }
 
   return (
     <div className="suche station">
@@ -70,20 +100,15 @@ function StationFeld({ platzhalter, wert, setWert }) {
           setOffen(true);
         }}
       />
-      {offen && vorschlaege.length > 0 && (
+
+      {offen && (vorschlaege.length > 0 || status !== "") && (
         <ul className="vorschlaege">
           {vorschlaege.map((station) => (
-            <li
-              key={station.id}
-              onClick={() => {
-                setWert(station.name);
-                setOffen(false);
-                setVorschlaege([]);
-              }}
-            >
+            <li key={station.id} onClick={() => waehle(station)}>
               🚉 {station.name}
             </li>
           ))}
+          {status !== "" && <li className="vorschlag-hinweis">{SUCH_HINWEIS[status]}</li>}
         </ul>
       )}
     </div>
