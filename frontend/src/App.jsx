@@ -4,6 +4,7 @@ import { ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveCont
 import Zuege from "./Zuege";
 import Prognose from "./Prognose";
 import PendelRegen from "./PendelRegen";
+import Verkehr from "./Verkehr";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 const STANDARD_ORT = { name: "Basel", canton: "Basel-Stadt", lat: 47.56, lon: 7.59 };
@@ -178,6 +179,9 @@ function App() {
         <button className={bereich === "prognose" ? "aktiv" : ""} onClick={() => setBereich("prognose")}>
           🔮 Prognose
         </button>
+        <button className={bereich === "verkehr" ? "aktiv" : ""} onClick={() => setBereich("verkehr")}>
+          🚗 Verkehr
+        </button>
       </nav>
 
       {/* ===== Bereich: Wetter ===== */}
@@ -321,8 +325,16 @@ function App() {
       <div className="bereich" hidden={bereich !== "prognose"}>
         <Prognose />
       </div>
+
+    {/* ===== Bereich: Verkehr ===== */}
+      <div className="bereich" hidden={bereich !== "verkehr"}>
+        <Verkehr pins={pins} />
+      </div>
+      
     </main>
+    
   );
+        
 }
 
 export default App;

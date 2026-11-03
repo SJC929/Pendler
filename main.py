@@ -10,6 +10,8 @@ from feiertage import next_holiday
 from zuege import search_stations, get_connections, FahrplanNichtErreichbar
 from prognose import delay_prognose, haltestellen, PrognoseFehlt, HaltestelleUnbekannt
 
+from verkehr import route_mit_verkehr, adresse_suchen, VerkehrNichtErreichbar, KeinSchluessel
+
 app = FastAPI(title="Pendler API")
 
 app.add_middleware(
@@ -94,6 +96,24 @@ def weather_commute(
     except requests.RequestException:
         raise HTTPException(status_code=503, detail="Wetterdaten sind gerade nicht verfügbar")
     return {"hin": pendel_regen(daten, hin), "heim": pendel_regen(daten, heim)}
+
+@app.get("/traffic/route")
+def traffic_route(von_lat: float, von_lon: float, nach_lat: float, nach_lon: float):
+    try:
+        return route_mit_verkehr(von_lat, von_lon, nach_lat, nach_lon)
+    except KeinSchluessel:
+        raise HTTPException(status_code=503, detail="Verkehrsdaten sind nicht eingerichtet")
+    except VerkehrNichtErreichbar:
+        raise HTTPException(status_code=503, detail="Verkehrsdaten sind gerade nicht verfügbar")
+
+@app.get("/traffic/search")
+def traffic_search(q: str = Query(..., min_length=3)):
+    try:
+        return adresse_suchen(q)
+    except KeinSchluessel:
+        raise HTTPException(status_code=503, detail="Verkehrsdaten sind nicht eingerichtet")
+    except VerkehrNichtErreichbar:
+        raise HTTPException(status_code=503, detail="Adresssuche ist gerade nicht verfügbar")
 
 
 @app.get("/pollen")
