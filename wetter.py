@@ -131,3 +131,66 @@ def pollen_level(wert):
     if wert < 100:
         return "moderate", "mässig"
     return "high", "stark"
+
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+SCHWEIZ = ZoneInfo("Europe/Zurich")
+
+
+def get_commute_weather(lat, lon):
+    """Holt stündliche Regen-Wahrscheinlichkeit und Regenmenge für heute und morgen."""
+    url = "https://api.open-meteo.com/v1/forecast"
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "hourly": "precipitation_probability,precipitation",
+        "timezone": "Europe/Zurich",
+        "forecast_days": 2,
+    }
+    antwort = requests.get(url, params=params, timeout=10)
+    antwort.raise_for_status()
+    return antwort.json()
+
+
+def regen_stufe(wahrscheinlichkeit, menge_mm):
+    """Übersetzt Wahrscheinlichkeit (%) und Menge (mm) in eine einfache Stufe."""
+    if wahrscheinlichkeit >= 50 and menge_mm >= 0.2:
+        return "regen"
+    if wahrscheinlichkeit >= 30:
+        return "vielleicht"
+    return "trocken"
+
+
+def pendel_regen(daten, uhrzeit, jetzt=None):
+    """Regen-Stufe für die nächste Pendelzeit, z.B. uhrzeit="07:30".
+
+    Schaut auf die Stunde der Abfahrt und die Stunde danach.
+    Ist die Zeit heute schon vorbei, wird morgen genommen.
+    """
+    if jetzt is None:
+        jetzt = datetime.now(SCHWEIZ).replace(tzinfo=None)
+
+    stunde, minute = map(int, uhrzeit.split(":"))
+    ziel = jetzt.replace(hour=stunde, minute=minute, second=0, microsecond=0)
+    tag = "heute"
+    if ziel + timedelta(hours=1) < jetzt:
+        ziel += timedelta(days=1)
+        tag = "morgen"
+
+    start = ziel.replace(minute=0)
+    fenster = {(start + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M") for i in range(2)}
+
+    stunden = daten["hourly"]
+    wahrscheinlichkeiten, mengen = [], []
+    for i, zeit in enumerate(stunden["time"]):
+        if zeit in fenster:
+            wahrscheinlichkeiten.append(stunden["precipitation_probability"][i] or 0)
+            mengen.append(stunden["precipitation"][i] or 0)
+
+    if not wahrscheinlichkeiten:
+        return None
+
+    w = max(wahrscheinlichkeiten)
+    m = round(sum(mengen), 1)
+    return {"zeit": uhrzeit, "tag": tag, "wahrscheinlichkeit": w, "menge_mm": m, "stufe": regen_stufe(w, m)}

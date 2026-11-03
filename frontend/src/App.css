@@ -522,3 +522,80 @@
 .punkt.tief { background: #5dcaa5; }
 .punkt.mittel { background: #ef9f27; }
 .punkt.hoch { background: #e24b4a; }
+
+/* ===== Pendel-Regen ===== */
+.pendel {
+  margin: 12px 0 16px;
+}
+
+.pendel-banner {
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.pendel-banner.trocken { background: #e1f5ee; color: #0f6e56; }
+.pendel-banner.vielleicht { background: #faeeda; color: #854f0b; }
+.pendel-banner.regen { background: #e6f1fb; color: #0c447c; }
+
+.pendel-wege {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pendel-weg {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f1f3f7;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.pendel-weg input {
+  font-size: 16px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.pendel-stufe { font-size: 14px; }
+.pendel-stufe.vielleicht { color: #854f0b; }
+.pendel-stufe.regen { color: #0c447c; font-weight: 600; }
+
+@media (max-width: 500px) {
+  .pendel-wege {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pendel-orte {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.pendel-orte label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: #666;
+}
+
+.pendel-orte select {
+  padding: 8px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: white;
+}
+
+.pendel-hinweis {
+  font-size: 13px;
+  color: #888;
+  margin: -4px 0 10px;
+}

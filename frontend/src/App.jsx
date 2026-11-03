@@ -3,6 +3,7 @@ import "./App.css";
 import { ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import Zuege from "./Zuege";
 import Prognose from "./Prognose";
+import PendelRegen from "./PendelRegen";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 const STANDARD_ORT = { name: "Basel", canton: "Basel-Stadt", lat: 47.56, lon: 7.59 };
@@ -233,6 +234,9 @@ function App() {
             <strong>{datumSchoen(feiertag.date)}</strong> · {feiertag.name}
           </div>
         )}
+
+        {/* Regenwarnung für die Pendelzeiten */}
+        <PendelRegen pins={pins} ort={ort} />
 
         {/* Umschalter */}
         <div className="umschalter">

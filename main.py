@@ -1,6 +1,11 @@
-from fastapi import FastAPI, HTTPException
+import requests
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from wetter import get_weather, get_week_weather, search_locations, get_pollen, pollen_level, will_it_rain, STADT, LAT, LON
+
+from wetter import (
+    get_weather, get_week_weather, search_locations, get_pollen, pollen_level,
+    will_it_rain, get_commute_weather, pendel_regen, STADT, LAT, LON,
+)
 from feiertage import next_holiday
 from zuege import search_stations, get_connections, FahrplanNichtErreichbar
 from prognose import delay_prognose, haltestellen, PrognoseFehlt, HaltestelleUnbekannt
@@ -77,6 +82,20 @@ def weather_week(lat: float = LAT, lon: float = LON, city: str = STADT):
     }
 
 
+@app.get("/weather/commute")
+def weather_commute(
+    lat: float,
+    lon: float,
+    hin: str = Query("07:30", pattern=r"^\d{2}:\d{2}$"),
+    heim: str = Query("17:00", pattern=r"^\d{2}:\d{2}$"),
+):
+    try:
+        daten = get_commute_weather(lat, lon)
+    except requests.RequestException:
+        raise HTTPException(status_code=503, detail="Wetterdaten sind gerade nicht verfügbar")
+    return {"hin": pendel_regen(daten, hin), "heim": pendel_regen(daten, heim)}
+
+
 @app.get("/pollen")
 def pollen(lat: float = LAT, lon: float = LON):
     wert, art = get_pollen(lat, lon)
@@ -108,6 +127,7 @@ def connections(von: str, nach: str, date: str, time: str):
         return get_connections(von, nach, date, time)
     except FahrplanNichtErreichbar:
         raise HTTPException(status_code=503, detail="Fahrplan gerade nicht erreichbar")
+
 
 @app.get("/predict/delay/stops")
 def predict_delay_stops():
