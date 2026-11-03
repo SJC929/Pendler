@@ -396,3 +396,129 @@
 .vorschlaege li.vorschlag-hinweis:hover {
   background: transparent;
 }
+
+/* ===== Prognose ===== */
+.prognose-intro {
+  color: #666;
+  margin-top: -8px;
+}
+
+.prognose-halt {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+  font-weight: 600;
+}
+
+.prognose-halt select {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+.tage {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 14px;
+}
+
+.tage button {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+}
+
+.tage button.aktiv {
+  background: #185fa5;
+  border-color: #185fa5;
+  color: white;
+}
+
+.risiko-karte {
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.risiko-karte p {
+  margin: 0;
+}
+
+.risiko-karte .wert {
+  font-size: 2.4rem;
+  font-weight: 700;
+  margin: 4px 0;
+}
+
+.risiko-karte.tief { background: #e1f5ee; color: #0f6e56; }
+.risiko-karte.mittel { background: #faeeda; color: #854f0b; }
+.risiko-karte.hoch { background: #fcebeb; color: #a32d2d; }
+
+.stunden {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stunde {
+  display: grid;
+  grid-template-columns: 50px 1fr 46px;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.balken-bahn {
+  height: 14px;
+  background: #eee;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.balken {
+  height: 100%;
+  border-radius: 7px;
+}
+
+.balken.tief { background: #5dcaa5; }
+.balken.mittel { background: #ef9f27; }
+.balken.hoch { background: #e24b4a; }
+
+.stunde-wert {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.prognose-info {
+  font-size: 12px;
+  color: #888;
+  margin-top: 18px;
+}
+
+.legende {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #666;
+  margin-top: 14px;
+}
+
+.punkt {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.punkt.tief { background: #5dcaa5; }
+.punkt.mittel { background: #ef9f27; }
+.punkt.hoch { background: #e24b4a; }

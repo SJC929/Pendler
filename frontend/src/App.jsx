@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import Zuege from "./Zuege";
+import Prognose from "./Prognose";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 const STANDARD_ORT = { name: "Basel", canton: "Basel-Stadt", lat: 47.56, lon: 7.59 };
@@ -59,7 +60,7 @@ function ladeBereich() {
 
 function App() {
   // 📝 Gedächtnis
-  const [bereich, setBereich] = useState(ladeBereich); // NEU: «wetter» oder «zuege»
+  const [bereich, setBereich] = useState(ladeBereich); // «wetter», «zuege» oder «prognose»
   const [pins, setPins] = useState(ladePins);
   const [ort, setOrt] = useState(() => ladePins()[0]);
   const [suche, setSuche] = useState("");
@@ -165,13 +166,16 @@ function App() {
     <main className="app">
       <h1>🚆 Pendler</h1>
 
-      {/* 🧭 NEU: Navigation */}
+      {/* 🧭 Navigation */}
       <nav className="nav">
         <button className={bereich === "wetter" ? "aktiv" : ""} onClick={() => setBereich("wetter")}>
           🌦️ Wetter
         </button>
         <button className={bereich === "zuege" ? "aktiv" : ""} onClick={() => setBereich("zuege")}>
           🚆 Verbindungen
+        </button>
+        <button className={bereich === "prognose" ? "aktiv" : ""} onClick={() => setBereich("prognose")}>
+          🔮 Prognose
         </button>
       </nav>
 
@@ -307,6 +311,11 @@ function App() {
       {/* ===== Bereich: Verbindungen ===== */}
       <div className="bereich" hidden={bereich !== "zuege"}>
         <Zuege />
+      </div>
+
+      {/* ===== Bereich: Prognose ===== */}
+      <div className="bereich" hidden={bereich !== "prognose"}>
+        <Prognose />
       </div>
     </main>
   );
