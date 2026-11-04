@@ -11,7 +11,7 @@ permissions:
 jobs:
   prognose:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90       # erster Lauf holt ~32 Tage ganz Basel nach
 
     steps:
       - name: Code holen
@@ -25,11 +25,17 @@ jobs:
       - name: Pakete installieren
         run: pip install pandas scikit-learn requests tzdata sqlalchemy "psycopg[binary]"
 
-      - name: ① Neue Ist-Daten sammeln (CSV + Datenbank)
+      - name: ① Neue Ist-Daten Bus 48 sammeln (CSV + Datenbank)
         env:
           OTD_TOKEN: ${{ secrets.OTD_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python ml/10_sammeln.py
+
+      - name: ①b Ganz Basel sammeln (Zusammenfassung pro Stunde)
+        env:
+          OTD_TOKEN: ${{ secrets.OTD_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python ml/14_basel_sammeln.py
 
       - name: ② Daten aufbereiten
         run: python ml/11_aufbereiten.py

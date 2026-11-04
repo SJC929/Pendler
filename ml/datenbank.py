@@ -104,3 +104,80 @@ def anzahl(engine):
         zeilen = conn.execute(text("SELECT COUNT(*) FROM fahrten")).scalar()
         tage = conn.execute(text("SELECT COUNT(DISTINCT betriebstag) FROM fahrten")).scalar()
     return zeilen, tage
+
+# ===== Ganz Basel: Zusammenfassung pro Stunde =====
+
+BASEL_TABELLE = """
+CREATE TABLE IF NOT EXISTS basel_stunden (
+    datum               DATE NOT NULL,
+    betreiber           TEXT NOT NULL,
+    linie               TEXT NOT NULL,
+    haltestelle         TEXT NOT NULL,
+    ziel                TEXT NOT NULL,
+    stunde              SMALLINT NOT NULL,
+    abfahrten           INTEGER NOT NULL,
+    zu_spaet            INTEGER NOT NULL,
+    verspaetung_mittel  REAL,
+    PRIMARY KEY (datum, betreiber, linie, haltestelle, ziel, stunde)
+)
+"""
+
+
+def basel_tabelle_anlegen(engine):
+    with engine.begin() as conn:
+        conn.execute(text(BASEL_TABELLE))
+
+
+def zusammenfassen(roh, schwelle_min=3):
+    """Rohdaten eines Tages → eine Zeile pro Linie, Haltestelle, Ziel und Stunde."""
+    df = roh.copy()
+    df["plan"] = zeit(df["ABFAHRTSZEIT"])
+    df["ist"] = zeit(df["AB_PROGNOSE"])
+    df["fahrt"] = df["BETRIEBSTAG"] + "_" + df["FAHRT_BEZEICHNER"]
+
+    # Ziel jeder Fahrt = letzte Haltestelle
+    df["reihenfolge"] = df["plan"].fillna(zeit(df["ANKUNFTSZEIT"]))
+    ziel = df.sort_values("reihenfolge").groupby("fahrt")["HALTESTELLEN_NAME"].last()
+    df["ziel"] = df["fahrt"].map(ziel)
+
+    # Nur echt gemessene Abfahrten, Messfehler weglassen
+    df = df[(df["AB_PROGNOSE_STATUS"] == "REAL") & df["plan"].notna() & df["ist"].notna()].copy()
+    df["verspaetung"] = (df["ist"] - df["plan"]).dt.total_seconds() / 60
+    df = df[df["verspaetung"].between(-2, 30)]
+
+    df["datum"] = pd.to_datetime(df["BETRIEBSTAG"], format="mixed", dayfirst=True).dt.date
+    df["stunde"] = df["plan"].dt.hour
+    df["spaet"] = (df["verspaetung"] > schwelle_min).astype(int)
+
+    zusammen = (
+        df.groupby(["datum", "BETREIBER_ABK", "LINIEN_TEXT", "HALTESTELLEN_NAME", "ziel", "stunde"])
+        .agg(abfahrten=("spaet", "size"), zu_spaet=("spaet", "sum"), verspaetung_mittel=("verspaetung", "mean"))
+        .reset_index()
+        .rename(columns={"BETREIBER_ABK": "betreiber", "LINIEN_TEXT": "linie", "HALTESTELLEN_NAME": "haltestelle"})
+    )
+    zusammen["verspaetung_mittel"] = zusammen["verspaetung_mittel"].round(2)
+    return zusammen
+
+
+def basel_speichern(engine, zusammen):
+    """Speichert einen Tag. Gibt es den Tag schon, wird er ersetzt."""
+    with engine.begin() as conn:
+        for datum in zusammen["datum"].unique():
+            conn.execute(text("DELETE FROM basel_stunden WHERE datum = :d"), {"d": datum})
+        zusammen.to_sql("basel_stunden", conn, if_exists="append", index=False, method="multi", chunksize=1000)
+    return len(zusammen)
+
+
+def basel_vorhandene_tage(engine):
+    with engine.connect() as conn:
+        zeilen = conn.execute(text("SELECT DISTINCT datum FROM basel_stunden")).fetchall()
+    return {z[0].isoformat() for z in zeilen}
+
+
+def basel_aufraeumen(engine, tage_behalten=120):
+    """Löscht alles, was älter als 120 Tage ist (damit die Gratis-DB nicht voll wird)."""
+    with engine.begin() as conn:
+        geloescht = conn.execute(
+            text("DELETE FROM basel_stunden WHERE datum < CURRENT_DATE - :t"), {"t": tage_behalten}
+        ).rowcount
+    return geloescht
