@@ -6,6 +6,7 @@ const FEHLER_TEXT = "Die Prognose ist gerade nicht verfügbar. Bitte später noc
 
 // Risiko in Prozent → Farbe
 const stufe = (r) => (r >= 35 ? "hoch" : r >= 15 ? "mittel" : "tief");
+const zweistellig = (z) => String(z).padStart(2, "0");
 
 // In Basel sind die Linien unter 30 Trams, die anderen Busse
 function fahrzeug(linie) {
@@ -14,7 +15,7 @@ function fahrzeug(linie) {
 }
 
 function lokalesDatum(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return `${d.getFullYear()}-${zweistellig(d.getMonth() + 1)}-${zweistellig(d.getDate())}`;
 }
 
 function naechsteTage() {
@@ -102,18 +103,15 @@ export default function StationPrognose() {
 
   return (
     <div className="station">
-      <h2>
-        🔮 Verspätungsprognose <span className="kanton">alle Trams und Busse in Basel</span>
-      </h2>
-      <p className="prognose-intro">Wie wahrscheinlich ist dein Tram oder Bus mehr als 3 Minuten zu spät?</p>
+      <h2>🔮 Kommt mein Tram pünktlich?</h2>
+      <p className="station-untertitel">Alle Trams und Busse in Basel · Prognose für 7 Tage</p>
 
-      {/* Haltestelle suchen */}
+      {/* Haltestelle */}
       <div className="adress-feld">
-        <span className="label">🚏 Haltestelle</span>
         <input
           type="text"
           className="station-suche"
-          placeholder={station || "z. B. Aeschenplatz"}
+          placeholder={station ? `🚏 ${station}` : "🚏 Haltestelle suchen, z. B. Aeschenplatz"}
           value={suche}
           onChange={(e) => setSuche(e.target.value)}
         />
@@ -126,63 +124,69 @@ export default function StationPrognose() {
         )}
       </div>
 
-      {!station && <p className="pendel-hinweis">Such oben deine Haltestelle, zum Beispiel «Bahnhof SBB».</p>}
-
       {station && (
         <>
-          <h3 className="station-name">🚏 {station}</h3>
-
           {/* Tag + Uhrzeit */}
-          <div className="tage">
-            {tage.map((d, i) => (
-              <button key={d} className={d === tag ? "aktiv" : ""} onClick={() => setTag(d)}>
-                {tagLabel(d, i)}
-              </button>
-            ))}
-          </div>
-          <label className="station-ab">
-            ab
-            <select value={ab} onChange={(e) => setAb(Number(e.target.value))}>
-              {Array.from({ length: 19 }, (_, i) => i + 5).map((s) => (
-                <option key={s} value={s}>{String(s).padStart(2, "0")}:00</option>
+          <div className="station-steuerung">
+            <div className="tage">
+              {tage.map((d, i) => (
+                <button key={d} className={d === tag ? "aktiv" : ""} onClick={() => setTag(d)}>
+                  {tagLabel(d, i)}
+                </button>
               ))}
-            </select>
-          </label>
+            </div>
+            <label className="station-ab">
+              ab
+              <select value={ab} onChange={(e) => setAb(Number(e.target.value))}>
+                {Array.from({ length: 19 }, (_, i) => i + 5).map((s) => (
+                  <option key={s} value={s}>{zweistellig(s)}:00</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {/* Legende oben */}
+          <div className="station-legende">
+            <span><i className="punkt tief" /> pünktlich</span>
+            <span><i className="punkt mittel" /> manchmal zu spät</span>
+            <span><i className="punkt hoch" /> oft zu spät</span>
+          </div>
+          <p className="station-erklaerung">Die Zahl = Chance, dass es mehr als 3 Minuten zu spät ist.</p>
 
           {fehler && <p className="fehler">{fehler}</p>}
           {!daten && !fehler && <p>Lade Prognose …</p>}
           {daten && linien.length === 0 && <p>Zu dieser Zeit fahren hier keine Trams oder Busse.</p>}
 
-          {/* Linien */}
-          <div className="station-liste">
-            {linien.map((l) => (
-              <div className="station-zeile" key={`${l.betreiber}-${l.linie}-${l.ziel}`}>
-                <div className="station-kopf">
+          {/* Tabelle */}
+          {linien.length > 0 && (
+            <div className="station-tabelle">
+              <div className="station-zeile station-kopf">
+                <span>Linie</span>
+                <span>Richtung</span>
+                {stunden.map((s) => (
+                  <span key={s} className="station-zeit">{zweistellig(s)}:00</span>
+                ))}
+              </div>
+
+              {linien.map((l) => (
+                <div className="station-zeile" key={`${l.betreiber}-${l.linie}-${l.ziel}`}>
                   <span className="station-linie">{fahrzeug(l.linie)} {l.linie}</span>
-                  <span className="station-ziel">→ {l.ziel}</span>
-                </div>
-                <div className="station-stunden">
+                  <span className="station-ziel" title={l.ziel}>{l.ziel}</span>
                   {stunden.map((s) => {
                     const eintrag = l.stunden.find((x) => x.stunde === s);
                     return (
-                      <span key={s} className={`bd ${eintrag ? stufe(eintrag.risiko) : "leer"}`}>
-                        {String(s).padStart(2, "0")}h {eintrag ? `${eintrag.risiko} %` : "–"}
+                      <span key={s} className={`zelle ${eintrag ? stufe(eintrag.risiko) : "leer"}`}>
+                        {eintrag ? `${eintrag.risiko}%` : "–"}
                       </span>
                     );
                   })}
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
-          <div className="legende">
-            <span><i className="punkt tief" /> unter 15 %</span>
-            <span><i className="punkt mittel" /> 15–34 %</span>
-            <span><i className="punkt hoch" /> ab 35 %</span>
-          </div>
           <p className="prognose-info">
-            Ein Machine-Learning-Modell für alle 46 Linien von BVB und BLT, trainiert mit den echten Fahrdaten
-            der letzten Wochen (opentransportdata.swiss), Wetter und Schulferien. Jede Nacht neu berechnet. Ohne Gewähr.
+            Echte Fahrdaten von BVB und BLT · Wetter und Schulferien · jede Nacht neu berechnet · ohne Gewähr
           </p>
         </>
       )}

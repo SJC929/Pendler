@@ -7,6 +7,7 @@ Erstellt die Verspätungsprognose für Bus 48 (BVB) für die nächsten 7 Tage.
 4. Speichert alles in prognosen/bus48.json (wird später von FastAPI gelesen)
 """
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -54,18 +55,27 @@ def modell_trainieren():
 
 
 def wetter_holen():
-    antwort = requests.get(
-        "https://api.open-meteo.com/v1/forecast",
-        params={
-            "latitude": LAT, "longitude": LON,
-            "hourly": "temperature_2m,precipitation",
-            "timezone": "Europe/Zurich", "forecast_days": TAGE,
-        },
-        timeout=30,
-    )
-    antwort.raise_for_status()
-    stunden = antwort.json()["hourly"]
+    """Wetterprognose holen – bei Zeitüberschreitung bis zu 3 Versuche."""
+    for versuch in range(1, 4):
+        try:
+            antwort = requests.get(
+                "https://api.open-meteo.com/v1/forecast",
+                params={
+                    "latitude": LAT, "longitude": LON,
+                    "hourly": "temperature_2m,precipitation",
+                    "timezone": "Europe/Zurich", "forecast_days": TAGE,
+                },
+                timeout=30,
+            )
+            antwort.raise_for_status()
+            break
+        except requests.RequestException:
+            if versuch == 3:
+                raise
+            print(f"⏳ Open-Meteo antwortet nicht (Versuch {versuch}/3), warte 10 s …")
+            time.sleep(10)
 
+    stunden = antwort.json()["hourly"]
     wetter = pd.DataFrame({
         "zeit": pd.to_datetime(stunden["time"]),
         "temp": stunden["temperature_2m"],
