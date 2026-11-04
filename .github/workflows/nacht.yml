@@ -54,3 +54,8 @@ jobs:
             git commit -m "Nightly: new data and delay forecast"
             git push
           fi
+
+      - name: ③b Prognose ganz Basel (in die Datenbank)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python ml/15_basel_prognose.py
