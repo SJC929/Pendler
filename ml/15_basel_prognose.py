@@ -16,6 +16,7 @@ aufbereiten = importlib.import_module("11_aufbereiten")  # MeteoSchweiz-Adresse
 
 GLAETTUNG = 20      # wenige Abfahrten → Quote Richtung Durchschnitt ziehen
 TAGE = 7
+MIN_ABFAHRTEN = 20  # seltene Sonderfahrten (Depot etc.) nicht anzeigen
 MERKMALE = ["stunde", "wochentag", "wochenende", "schulferien", "temp", "regen_mm",
             "quote_halt", "quote_stunde"]
 
@@ -125,6 +126,12 @@ def zukunft(daten, gesamt, tabellen):
     """Alle Fahrten der letzten 4 Wochen (getrennt Werktag/Wochenende) für die nächsten 7 Tage."""
     letzte = daten[daten["datum"] > daten["datum"].max() - pd.Timedelta(days=28)].copy()
     letzte["tagtyp"] = letzte["datum"].dt.day_of_week >= 5
+
+    # Nur Linien+Ziele, die hier regelmässig fahren
+    schluessel = ["betreiber", "linie", "haltestelle", "ziel"]
+    anzahl = letzte.groupby(schluessel)["abfahrten"].sum()
+    regelmaessig = anzahl[anzahl >= MIN_ABFAHRTEN].reset_index()[schluessel]
+    letzte = letzte.merge(regelmaessig, on=schluessel)
     kombis = letzte[["betreiber", "linie", "haltestelle", "ziel", "stunde", "tagtyp"]].drop_duplicates()
 
     start = prognose48.heute()

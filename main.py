@@ -11,6 +11,7 @@ from zuege import search_stations, get_connections, FahrplanNichtErreichbar
 from prognose import delay_prognose, haltestellen, PrognoseFehlt, HaltestelleUnbekannt
 
 from verkehr import route_mit_verkehr, adresse_suchen, VerkehrNichtErreichbar, KeinSchluessel
+from station import haltestellen_suchen, station_prognose, DatenbankFehlt
 
 app = FastAPI(title="Pendler API")
 
@@ -165,3 +166,19 @@ def predict_delay(haltestelle: str, richtung: str, datum: str | None = None):
         raise HTTPException(status_code=503, detail="Prognose ist gerade nicht verfügbar")
     except HaltestelleUnbekannt:
         raise HTTPException(status_code=404, detail="Keine Prognose für diese Haltestelle/Richtung")
+
+
+@app.get("/predict/station/search")
+def predict_station_search(q: str = Query(..., min_length=2)):
+    try:
+        return haltestellen_suchen(q)
+    except DatenbankFehlt:
+        raise HTTPException(status_code=503, detail="Prognose ist gerade nicht verfügbar")
+
+
+@app.get("/predict/station")
+def predict_station(haltestelle: str, datum: str | None = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$")):
+    try:
+        return station_prognose(haltestelle, datum)
+    except DatenbankFehlt:
+        raise HTTPException(status_code=503, detail="Prognose ist gerade nicht verfügbar")

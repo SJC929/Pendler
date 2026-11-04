@@ -751,3 +751,73 @@
   color: #666;
   border-top: 1px solid #f0f0f0;
 }
+
+/* ===== Station-Prognose ===== */
+.station-suche {
+  padding: 10px 12px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+.station-name {
+  margin: 16px 0 8px;
+}
+
+.station-ab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #666;
+}
+
+.station-ab select {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: white;
+}
+
+.station-liste {
+  display: flex;
+  flex-direction: column;
+}
+
+.station-zeile {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.station-kopf {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.station-linie {
+  font-weight: 600;
+  min-width: 52px;
+}
+
+.station-ziel {
+  color: #555;
+  font-size: 14px;
+}
+
+.station-stunden {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.station-stunden .bd {
+  text-align: center;
+}
+
+.bd.leer {
+  background: #f4f4f4;
+  color: #aaa;
+}

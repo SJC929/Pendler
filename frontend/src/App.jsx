@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import Zuege from "./Zuege";
-import Prognose from "./Prognose";
+import StationPrognose from "./StationPrognose";
 import PendelRegen from "./PendelRegen";
 import Verkehr from "./Verkehr";
 
@@ -323,7 +323,7 @@ function App() {
 
       {/* ===== Bereich: Prognose ===== */}
       <div className="bereich" hidden={bereich !== "prognose"}>
-        <Prognose />
+        <StationPrognose />
       </div>
 
     {/* ===== Bereich: Verkehr ===== */}
