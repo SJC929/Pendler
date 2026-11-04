@@ -23,11 +23,12 @@ jobs:
           python-version: "3.12"
 
       - name: Pakete installieren
-        run: pip install pandas scikit-learn requests tzdata
+        run: pip install pandas scikit-learn requests tzdata sqlalchemy "psycopg[binary]"
 
-      - name: ① Neue Ist-Daten sammeln
+      - name: ① Neue Ist-Daten sammeln (CSV + Datenbank)
         env:
           OTD_TOKEN: ${{ secrets.OTD_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python ml/10_sammeln.py
 
       - name: ② Daten aufbereiten

@@ -3,7 +3,8 @@ Sammelt die neuen Ist-Daten für Bus 48 (BVB).
 
 1. Fragt bei opentransportdata.swiss (CKAN) nach, welche Tagesdateien es gibt
 2. Lädt nur die Tage herunter, die wir noch nicht haben
-3. Behält nur Linie 48 der BVB und speichert sie in ml/data/linie/
+3. Behält nur Linie 48 der BVB
+4. Speichert als CSV in ml/data/linie/ und (falls eingerichtet) in der Datenbank
 """
 import os
 import tempfile
@@ -11,6 +12,8 @@ from pathlib import Path
 
 import pandas as pd
 import requests
+
+from datenbank import verbinden, tabelle_anlegen, speichern
 
 ML = Path(__file__).resolve().parent
 ZIEL = ML / "data" / "linie"
@@ -28,11 +31,11 @@ SPALTEN = [
 def lade_token():
     """Token aus der Umgebung (GitHub Actions) oder aus der Datei .env (lokal) lesen."""
     if os.environ.get("OTD_TOKEN"):
-        return os.environ["OTD_TOKEN"]
+        return os.environ["OTD_TOKEN"].strip()
     env_datei = ML.parent / ".env"
     if env_datei.exists():
-        for zeile in env_datei.read_text(encoding="utf-8").splitlines():
-            if zeile.startswith("OTD_TOKEN="):
+        for zeile in env_datei.read_text(encoding="utf-8-sig").splitlines():
+            if "=" in zeile and zeile.split("=", 1)[0].strip().upper() == "OTD_TOKEN":
                 return zeile.split("=", 1)[1].strip()
     raise RuntimeError("OTD_TOKEN nicht gefunden – steht er in der Datei .env?")
 
@@ -53,7 +56,7 @@ def tagesdateien(token):
     return dict(sorted(dateien.items()))
 
 
-def tag_holen(datum, url):
+def tag_holen(datum, url, engine):
     """Eine Tagesdatei herunterladen, Bus 48 herausfiltern, speichern."""
     teile = []
     with tempfile.TemporaryDirectory() as ordner:
@@ -72,12 +75,21 @@ def tag_holen(datum, url):
 
     linie = pd.concat(teile, ignore_index=True)
     linie.to_csv(ZIEL / f"{datum}_linie_48.csv", index=False)
+    if engine is not None:
+        speichern(engine, linie)
     return len(linie)
 
 
 def main():
     ZIEL.mkdir(parents=True, exist_ok=True)
     token = lade_token()
+
+    engine = verbinden()
+    if engine is not None:
+        tabelle_anlegen(engine)
+        print("🗄️ Datenbank verbunden")
+    else:
+        print("ℹ️ Keine DATABASE_URL – speichere nur als CSV")
 
     verfuegbar = tagesdateien(token)
     vorhanden = {p.name[:10] for p in ZIEL.glob("*_linie_48.csv")}
@@ -88,7 +100,7 @@ def main():
     fehler = 0
     for datum in neu:
         try:
-            zeilen = tag_holen(datum, verfuegbar[datum])
+            zeilen = tag_holen(datum, verfuegbar[datum], engine)
             print(f"   ✅ {datum}: {zeilen} Zeilen")
         except Exception as e:
             fehler += 1
